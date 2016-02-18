@@ -18,11 +18,11 @@
 	<section name="BuildPathsPropertyPage">
 		<item value="2" key="pageIndex"/>
 	</section>
+	<section name="quick_assist_proposal_size">
+	</section>
 	<section name="NewClassWizardPage">
 		<item value="false" key="create_constructor"/>
 		<item value="true" key="create_unimplemented"/>
-	</section>
-	<section name="quick_assist_proposal_size">
 	</section>
 	<section name="ClasspathContainerSelectionPage">
 		<item value="3" key="index"/>
@@ -52,8 +52,8 @@
 	<section name="JavadocWizardDialog">
 		<item value="818" key="DIALOG_WIDTH"/>
 		<item value="61" key="DIALOG_Y_ORIGIN"/>
-		<item value="560" key="DIALOG_X_ORIGIN"/>
 		<item value="695" key="DIALOG_HEIGHT"/>
+		<item value="560" key="DIALOG_X_ORIGIN"/>
 		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-15|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
 	</section>
 	<section name="NewPackageWizardPage">
