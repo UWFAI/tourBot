@@ -1,0 +1,78 @@
+import jssc.*;
+
+public class IRobot{
+	
+	private SerialPort sPort;
+	
+	//
+	private SerialPortEventListener event;
+	
+	// instead of always casting it will be faster to use this
+	private byte[] bytes = new byte[256];
+	
+	public IRobot(){
+		
+		// a small speed up helper
+		for(int i=0; i<bytes.length; i++){
+			bytes[i] = (byte) (i & 0xFF);
+		}
+		
+		// start the connection
+		try {
+			sPort = new SerialPort("COM3");
+			sPort.setParams(115200, 8, 1, 0);
+		} catch (SerialPortException e){
+			e.printStackTrace();
+		}
+		
+		//
+		addListener();
+	}
+	
+	private void addListener(){
+		event = new SerialPortEventListener() {
+			@Override
+			public void serialEvent(SerialPortEvent serialPortEvent) {
+				
+			}
+		};
+	}
+	
+	public void IO_start(){
+		try {
+			sPort.writeByte(bytes[128]);
+		} catch (SerialPortException e) {
+			e.printStackTrace();
+		}
+	}
+	public void IO_reset(){
+		try {
+			sPort.writeByte(bytes[7]);
+		} catch (SerialPortException e) {
+			e.printStackTrace();
+		}
+	}
+	public void IO_stop(){
+		try {
+			sPort.writeByte(bytes[173]);
+		} catch (SerialPortException e) {
+			e.printStackTrace();
+		}
+	}
+
+	
+	public void IO_send(int[] buffer){
+		try {
+			for(int i = 0;i<buffer.length;i++){
+				sPort.writeByte(bytes[buffer[i]]);
+			}
+		} catch (SerialPortException e) {
+			e.printStackTrace();
+		}
+	}
+
+
+
+
+
+}

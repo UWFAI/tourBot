@@ -1,0 +1,13 @@
+import jssc.SerialPortList;
+import jssc.SerialPort;
+import jssc.SerialPortException;
+
+public class IRobot{
+	
+	private SerialPort sPort;
+	
+	public IRobot(){
+		sPort = new SerialPort("COM3");
+		
+	}
+}

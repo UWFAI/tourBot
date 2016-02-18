@@ -1,0 +1,25 @@
+import jssc.SerialPortList;
+import jssc.SerialPort;
+import jssc.SerialPortException;
+
+public class IRobot{
+	
+	private SerialPort sPort;
+	
+	public IRobot(){
+		try {
+			sPort = new SerialPort("COM3");
+			sPort.setParams(115200, 8, 1, 0);
+		} catch (SerialPortException e){
+			e.printStackTrace();
+		}
+	}
+	
+	public void IO_stop(){
+		try {
+			sPort.writeByte((byte) 128);
+		} catch (SerialPortException e) {
+			e.printStackTrace();
+		}
+	}
+}
