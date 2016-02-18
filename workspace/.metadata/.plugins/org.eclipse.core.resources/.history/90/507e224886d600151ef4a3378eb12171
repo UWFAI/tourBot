@@ -10,9 +10,11 @@ public class SerialComm {
 		//bot.IO_reset();
 		//bot.setMode(true);
 		
-		//int[] song = {76,16,76,32,79,16,79,16,77,16,74,16,72,32};
+		int[] song = {88,32,83,16};
+		//bot.IO_start();
 		//bot.setSong(0,song);
 		bot.playSong(0);
+		//bot.IO_stop();
 		
 	}
 	
@@ -28,10 +30,11 @@ public class SerialComm {
 		}
 		*/
 		
+		
 		//int[] buffer = {7};//reset
 		int[] buffer = {128,131, // start and in safe mode
-						140, 0, 7, 
-						76,16,76,32,79,16,79,16,77,16,74,16,72,32,0,
+						140, 0, 14, 
+						88,32,83,16,84,16,86,16,88,8,86,8,84,16,83,16,81,32,81,16,84,16,88,32,86,16,84,16,83,48,84,16,86,32,88,32,84,32,81,32,81,64,0,
 						141, 0,// play song 0
 						};
 		SerialPort sPort = new SerialPort("COM3");

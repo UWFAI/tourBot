@@ -10,15 +10,17 @@ public class SerialComm {
 		//bot.IO_reset();
 		//bot.setMode(true);
 		
-		//int[] song = {76,16,76,32,79,16,79,16,77,16,74,16,72,32};
+		int[] song = {88,32,83,16};
+		//bot.IO_start();
 		//bot.setSong(0,song);
 		bot.playSong(0);
+		//bot.IO_stop();
 		
 	}
 	
 
 	public static void main(String[] args) {
-		new SerialComm();
+		//new SerialComm();
 		// TODO Auto-generated method stub
 		/*
 		String[] ports = SerialPortList.getPortNames();
@@ -27,11 +29,20 @@ public class SerialComm {
 			System.out.println(ports[i]);
 		}
 		*/
-		/*
+		
+		
 		//int[] buffer = {7};//reset
 		int[] buffer = {128,131, // start and in safe mode
-						140, 0, 7, 
-						76,16,76,32,79,16,79,16,77,16,74,16,72,32,0,
+						140, 0, 14, 
+						88,32,83,16,84,16,86,16,88,8,86,8,84,16,83,16,
+						81,32,81,16,84,16,88,32,86,16,84,16,
+						83,48,84,16,86,32,88,32,
+						84,32,81,32,81,64,
+						30,16,86,32,89,16,93,32,91,16,89,16,
+						88,48,84,16,88,32,86,16,84,16,
+						83,32,83,16,84,16,86,32,88,32,
+						84,32,81,32,81,32,30,32,
+						0,
 						141, 0,// play song 0
 						};
 		SerialPort sPort = new SerialPort("COM3");
@@ -46,7 +57,7 @@ public class SerialComm {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		*/
+		
 		
 		
 		
