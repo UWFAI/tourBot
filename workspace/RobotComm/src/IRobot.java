@@ -1,17 +1,20 @@
+import java.util.ArrayList;
 import jssc.*;
 
+/**
+* <h1>IRobot Communication</h1>
+* The IRobot class acts as the middle man between
+* the main AI and the IRobot. The java simple serial 
+* connector is used for the communication to make
+* the whole thing as simple as possible.
+*/
 public class IRobot{
 	
 	private SerialPort sPort;
-	
-	//
 	private SerialPortEventListener event;
-	
-	//
-	private byte[] opcodes = new byte[1024];
-	
-	// instead of always casting it will be faster to use this
+	private ArrayList<Integer> opcodes = new ArrayList<Integer>();
 	private byte[] bytes = new byte[256];
+	
 	
 	public IRobot(){
 		//
@@ -49,61 +52,43 @@ public class IRobot{
 		};
 	}
 
-	
-	public void send(){
-		
-	}
-
-	// start needs to be called before each command that sends
-	public void IO_start(){
+	/**
+	* This method is used to send the list of commands 
+	* and clear the opcode list. 
+	*/
+	public void IO_send(){
 		try {
-			sPort.writeByte(bytes[128]);
-		} catch (SerialPortException e) {
-			e.printStackTrace();
-		}
-	}
-	public void IO_reset(){
-		try {
-			sPort.writeByte(bytes[128]);
-			sPort.writeByte(bytes[7]);
-			sPort.writeByte(bytes[173]);
-		} catch (SerialPortException e) {
-			e.printStackTrace();
-		}
-	}
-	// the last thing the program needs to run is this to free the port
-	public void IO_stop(){
-		try {
-			sPort.writeByte(bytes[173]);
-		} catch (SerialPortException e) {
-			e.printStackTrace();
-		}
-	}
-
-	// an easy way to test commands
-	public void IO_send(int[] buffer){
-		IO_start();
-		try {
-			for(int i = 0;i<buffer.length;i++){
-				sPort.writeByte(bytes[buffer[i]]);
+			for(int i = 0;i<opcodes.size(); i++) {
+				sPort.writeByte(bytes[opcodes.get(i)]);
 			}
 		} catch (SerialPortException e) {
 			e.printStackTrace();
 		}
+		opcodes.clear();
 	}
 
-	// true - safe
-	// false - full
-	public void setMode(boolean safe){
-		IO_start();
-		try {
-			if (safe)
-				sPort.writeByte(bytes[131]);
-			else
-				sPort.writeByte(bytes[132]);
-		} catch (SerialPortException e) {
-			e.printStackTrace();
+	public void IO_start(){
+		opcodes.add(128);
+	}
+	public void IO_reset(){
+		opcodes.add(7);
+	}
+	public void IO_stop(){
+		opcodes.add(173);
+	}
+
+	// an easy way to test commands
+	public void IO_add(int[] buffer){
+		for(int i = 0;i<buffer.length;i++){
+			opcodes.add(buffer[i]);
 		}
+	}
+
+	public void setMode(boolean safe){
+		if (safe)
+			opcodes.add(131);
+		else
+			opcodes.add(132);
 	}
 
 	// TODO: the simple methods of just sending bytes
@@ -114,33 +99,16 @@ public class IRobot{
 	// LEDs // there are 4
 	// Digit_LEDs(d1, d2, d3)
 	public void setSong(int songIndex, int[] song){
-		
-		try {
-			//sPort.writeByte(bytes[128]); // start
-			//sPort.writeByte(bytes[131]); // safe mode
-			sPort.writeByte(bytes[140]); // start making song
-			sPort.writeByte(bytes[songIndex]); // song index
-			sPort.writeByte(bytes[song.length/2]); // number of notes
-			for(int i = 0;i<song.length;i++) {
-				sPort.writeByte(bytes[song[i]]);
-			}
-			sPort.writeByte((byte) (0 & 0xFF));// complete
-		} catch (SerialPortException e) {
-			e.printStackTrace();
+		opcodes.add(140);
+		opcodes.add(songIndex);
+		opcodes.add(song.length/2);			
+		for(int i = 0;i<song.length;i++) {
+			opcodes.add(song[i]);
 		}
-		
 	}
 	public void playSong(int songIndex){
-		try {
-			//sPort.writeByte(bytes[128]);
-			sPort.writeByte(bytes[131]);
-			sPort.writeByte(bytes[141]);
-			sPort.writeByte(bytes[songIndex]);
-			//sPort.writeByte(bytes[173]);
-		} catch (SerialPortException e) {
-			e.printStackTrace();
-		}
-		
+		opcodes.add(141);
+		opcodes.add(songIndex);
 	}
 	
 	// TODO: Input Commands

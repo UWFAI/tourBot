@@ -7,20 +7,19 @@ public class SerialComm {
 	public SerialComm(){
 		
 		bot = new IRobot();
-		//bot.IO_reset();
-		//bot.setMode(true);
 		
 		int[] song = {88,32,83,16};
-		//bot.IO_start();
-		//bot.setSong(0,song);
+		bot.IO_start();
+		bot.setMode(true);
+		bot.setSong(0,song);
 		bot.playSong(0);
-		//bot.IO_stop();
+		bot.IO_send();
 		
 	}
 	
 
 	public static void main(String[] args) {
-		//new SerialComm();
+		new SerialComm();
 		// TODO Auto-generated method stub
 		/*
 		String[] ports = SerialPortList.getPortNames();
@@ -30,7 +29,7 @@ public class SerialComm {
 		}
 		*/
 		
-		
+		/*
 		//int[] buffer = {7};//reset
 		int[] buffer = {128,131, // start and in safe mode
 						140, 0, 41, 
@@ -60,7 +59,7 @@ public class SerialComm {
 		
 		
 		
-		
+		*/
 	}
 
 }

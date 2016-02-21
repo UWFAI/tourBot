@@ -5,4 +5,5 @@
 <fullyQualifiedTypeName name="java.io.InputStreamReader"/>
 <fullyQualifiedTypeName name="jssc.SerialPortException"/>
 <fullyQualifiedTypeName name="jssc.SerialPortEventListener"/>
+<fullyQualifiedTypeName name="java.util.ArrayList"/>
 </qualifiedTypeNameHistroy>
