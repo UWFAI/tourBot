@@ -16,7 +16,7 @@ public class SerialComm {
 		bot.IO_send();
 		*/
 		
-		
+		/*
 		// play test song
 		int[] song = {88,32,83,16,84,16,86,16,88,8};
 		bot.IO_start();
@@ -24,16 +24,16 @@ public class SerialComm {
 		bot.setSong(0,song);
 		bot.playSong(0);
 		bot.IO_send();
+		*/
 		
 		
-		/*
 		bot.IO_start();
 		bot.setMode(true);
 		
 		bot.sensors_update();
 		
 		bot.IO_send();
-		*/
+		
 		
 	}
 	

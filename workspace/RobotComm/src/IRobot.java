@@ -13,16 +13,15 @@ public class IRobot{
 	private SerialPort sPort;
 	private ArrayList<Integer> opcodes = new ArrayList<Integer>();
 	private byte[] bytes = new byte[256];
-	
+	private int[] senserData = new int[51];
 	
 	public IRobot(){
-		//
 		
+		//
 		String[] ports = SerialPortList.getPortNames();
 		for(int i =0;i<ports.length;i++) {
 			System.out.println(ports[i]);
 		}
-		
 		
 		// a small speed up helper
 		for(int i=0; i<bytes.length; i++) {
@@ -39,9 +38,9 @@ public class IRobot{
 		}
 		
 		IO_start();
+		IO_send();
 		
 		// add an event listener to the port
-		/*
 		try {
 			sPort.addEventListener(new SerialPortEventListener() {
 				public void serialEvent(SerialPortEvent event) {
@@ -50,13 +49,44 @@ public class IRobot{
 			});
 		} catch (SerialPortException e) {
 			e.printStackTrace();
-			System.out.println("addEventListener noped out");
 		}
-		*/
+		
 	}
 	
 	private void listenerEvent(SerialPortEvent event){
-		System.out.println("Event string: " + event.toString());
+        if(event.isRXCHAR()){//If data is available
+        	try {
+        		byte[] got = sPort.readBytes();
+        		//System.out.println("HexString = " + sPort.readHexString());
+        		parseInput(got);
+        		System.out.println("Distance = " + distance);
+			} catch (SerialPortException e) {
+				e.printStackTrace();
+			}
+        } else if(event.isCTS()){//If CTS line has changed state
+            if(event.getEventValue() == 1){//If line is ON
+                System.out.println("CTS - ON");
+            } else {
+                System.out.println("CTS - OFF");
+            }
+        } else if(event.isDSR()){///If DSR line has changed state
+            if(event.getEventValue() == 1){//If line is ON
+                System.out.println("DSR - ON");
+            } else {
+                System.out.println("DSR - OFF");
+            }
+        }
+	}
+	//
+	private void parseInput(byte[] b){
+		byte header = b[0]; // I keep geting 13, I don't really know why...
+		byte nBytes = b[1]; //the number of bytes between the n-bytes byte and the checksum.
+		
+		if (header != 13) return;
+		
+		// the rest if for debug only
+		// b[2] = 13 
+		setDistance(b[3], b[4]);
 	}
 
 	/**
@@ -120,8 +150,20 @@ public class IRobot{
 	
 	// TODO: Input Commands
 	public void sensors_update(){
-		opcodes.add(142);
-		opcodes.add(7);
+		opcodes.add(148);
+		opcodes.add(1);
+		opcodes.add(20);
 	}
 	
+	// Distance - Packet ID: 19  - Data Bytes: 2, signed
+	private int distance = 0;
+	private void setDistance(int lByte, int rByte){
+		int val = ((lByte & 0xFF) << 8) | (rByte & 0xFF);
+		distance += val;
+	}
+	public int getDistance(){
+		int dis = distance;
+		//distance = 0;
+		return dis;
+	}
 }
