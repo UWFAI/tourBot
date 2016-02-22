@@ -1,4 +1,5 @@
 import jssc.*;
+import java.util.ArrayList;
 
 public class SerialComm {
 	
@@ -8,12 +9,31 @@ public class SerialComm {
 		
 		bot = new IRobot();
 		
-		int[] song = {88,32,83,16};
+		/*
+		// reset the bot
+		bot.IO_reset();
+		//bot.IO_stop();
+		bot.IO_send();
+		*/
+		
+		
+		// play test song
+		int[] song = {88,32,83,16,84,16,86,16,88,8};
 		bot.IO_start();
 		bot.setMode(true);
 		bot.setSong(0,song);
 		bot.playSong(0);
 		bot.IO_send();
+		
+		
+		/*
+		bot.IO_start();
+		bot.setMode(true);
+		
+		bot.sensors_update();
+		
+		bot.IO_send();
+		*/
 		
 	}
 	
@@ -29,8 +49,9 @@ public class SerialComm {
 		}
 		*/
 		
-		/*
+		
 		//int[] buffer = {7};//reset
+		/*
 		int[] buffer = {128,131, // start and in safe mode
 						140, 0, 41, 
 						88,32,83,16,84,16,86,16,88,8,86,8,84,16,83,16,
@@ -44,6 +65,7 @@ public class SerialComm {
 						0,
 						141, 0,// play song 0
 						};
+		
 		SerialPort sPort = new SerialPort("COM3");
 		try {
 			sPort.openPort();
@@ -57,9 +79,9 @@ public class SerialComm {
 			e.printStackTrace();
 		}
 		
-		
-		
 		*/
+		
+		
 	}
 
 }

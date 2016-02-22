@@ -11,17 +11,18 @@ import jssc.*;
 public class IRobot{
 	
 	private SerialPort sPort;
-	private SerialPortEventListener event;
 	private ArrayList<Integer> opcodes = new ArrayList<Integer>();
 	private byte[] bytes = new byte[256];
 	
 	
 	public IRobot(){
 		//
+		
 		String[] ports = SerialPortList.getPortNames();
 		for(int i =0;i<ports.length;i++) {
 			System.out.println(ports[i]);
 		}
+		
 		
 		// a small speed up helper
 		for(int i=0; i<bytes.length; i++) {
@@ -39,17 +40,23 @@ public class IRobot{
 		
 		IO_start();
 		
-		//
-		addListener();
+		// add an event listener to the port
+		/*
+		try {
+			sPort.addEventListener(new SerialPortEventListener() {
+				public void serialEvent(SerialPortEvent event) {
+					listenerEvent(event);
+				}
+			});
+		} catch (SerialPortException e) {
+			e.printStackTrace();
+			System.out.println("addEventListener noped out");
+		}
+		*/
 	}
 	
-	private void addListener(){
-		event = new SerialPortEventListener() {
-			@Override
-			public void serialEvent(SerialPortEvent serialPortEvent) {
-				// TODO
-			}
-		};
+	private void listenerEvent(SerialPortEvent event){
+		System.out.println("Event string: " + event.toString());
 	}
 
 	/**
@@ -112,6 +119,9 @@ public class IRobot{
 	}
 	
 	// TODO: Input Commands
-	
+	public void sensors_update(){
+		opcodes.add(142);
+		opcodes.add(7);
+	}
 	
 }
