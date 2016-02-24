@@ -37,7 +37,22 @@ public class IRobot{
 			e.printStackTrace();
 		}
 		
+		// start the giving power to the kinect
 		IO_start();
+		opcodes.add(131);
+		opcodes.add(144);
+		opcodes.add(0);
+		opcodes.add(0);
+		opcodes.add(127);
+		opcodes.add(0);
+		IO_send();
+		IO_start();
+		opcodes.add(131);
+		opcodes.add(144);
+		opcodes.add(0);
+		opcodes.add(0);
+		opcodes.add(127);
+		opcodes.add(0);
 		IO_send();
 		
 		// add an event listener to the port
@@ -56,10 +71,11 @@ public class IRobot{
 	private void listenerEvent(SerialPortEvent event){
         if(event.isRXCHAR()){//If data is available
         	try {
-        		byte[] got = sPort.readBytes();
+        		System.out.println("HexString = " + sPort.readHexString());
+        		//byte[] got = sPort.readBytes();
         		//System.out.println("HexString = " + sPort.readHexString());
-        		parseInput(got);
-        		System.out.println("Distance = " + distance);
+        		//parseInput(got);
+        		//System.out.println("Distance = " + distance);
 			} catch (SerialPortException e) {
 				e.printStackTrace();
 			}
@@ -152,7 +168,7 @@ public class IRobot{
 	public void sensors_update(){
 		opcodes.add(148);
 		opcodes.add(1);
-		opcodes.add(20);
+		opcodes.add(54);
 	}
 	
 	// Distance - Packet ID: 19  - Data Bytes: 2, signed
