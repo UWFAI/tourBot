@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+
 import jssc.*;
 
 /**
@@ -16,7 +18,12 @@ public class IRobot{
 	private SerialPort sPort;
 	private ArrayList<Integer> opcodes = new ArrayList<Integer>();
 	private byte[] bytes = new byte[256];
-	private int[] senserData = new int[51];
+	
+	// a list of the sensor packets that need to be updated
+	public ArrayList<Integer> sensorList = new ArrayList<Integer>();
+	
+	// the index of the sensor list 
+	private int sensorList_index = 0;
 	
 	/**
 	* <h2>IRobot - Constructor</h2>
@@ -99,11 +106,17 @@ public class IRobot{
 	private void listenerEvent(SerialPortEvent event){
         if(event.isRXCHAR()){//If data is available
         	try {
-        		System.out.println("HexString = " + sPort.readHexString());
-        		//byte[] got = sPort.readBytes();
-        		//System.out.println("HexString = " + sPort.readHexString());
-        		//parseInput(got);
-        		//System.out.println("Distance = " + distance);
+        		byte[] got = sPort.readBytes();
+        		parseInput(got);
+        		
+        		new Thread( new Runnable() {
+        	        public void run()  {
+        	            try  { Thread.sleep( 100 ); }
+        	            catch (InterruptedException ie)  {}
+        	            sensors_update();
+        	        }
+        		} ).start();
+        		
 			} catch (SerialPortException e) {
 				e.printStackTrace();
 			}
@@ -129,6 +142,14 @@ public class IRobot{
 	 * @param b A byte array.
 	 */	
 	private void parseInput(byte[] b){
+		
+		int packet = sensorList.get(sensorList_index);
+		String data = Arrays.toString(b);
+		System.out.println("got packet ["+packet+"] with data {"+data+"}");
+		
+		
+		
+		/*
 		byte header = b[0]; // I keep geting 13, I don't really know why...
 		byte nBytes = b[1]; //the number of bytes between the n-bytes byte and the checksum.
 		
@@ -137,6 +158,7 @@ public class IRobot{
 		// the rest if for debug only
 		// b[2] = 13 
 		setDistance(b[3], b[4]);
+		*/
 	}
 
 	/**
@@ -251,9 +273,15 @@ public class IRobot{
 	* 
 	*/
 	public void sensors_update(){
-		opcodes.add(148);
-		opcodes.add(1);
-		opcodes.add(54);
+		sensorList_index++;
+		if (sensorList_index >= sensorList.size())
+			sensorList_index = 0;
+		
+		IO_start();
+		setMode(true);		
+		opcodes.add(142);
+		opcodes.add(sensorList.get(sensorList_index));
+		IO_send();
 	}
 
 	/**

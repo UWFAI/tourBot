@@ -9,6 +9,11 @@ public class SerialComm {
 		
 		bot = new IRobot();
 		
+		bot.sensorList.add(19);
+		bot.sensorList.add(20);
+		bot.sensors_update();
+		
+		
 		/*
 		// reset the bot
 		bot.IO_reset();
@@ -16,7 +21,7 @@ public class SerialComm {
 		bot.IO_send();
 		*/
 		
-		
+		/*
 		// play test song
 		int[] song = {60,4,64,4,67,4,60,4,64,4,67,4,60,4,64,4,67,4,
 				60,4,64,4,67,4,60,4,64,4,67,4,60,4,64,4,67,4,
@@ -26,16 +31,14 @@ public class SerialComm {
 		bot.setSong(0,song);
 		bot.playSong(0);
 		bot.IO_send();
-		
-		
-		/*
-		bot.IO_start();
-		bot.setMode(true);
-		
-		bot.sensors_update();
-		
-		bot.IO_send();
 		*/
+		
+		
+		//bot.IO_start();
+		//bot.setMode(true);
+		
+		
+		
 		
 	}
 	

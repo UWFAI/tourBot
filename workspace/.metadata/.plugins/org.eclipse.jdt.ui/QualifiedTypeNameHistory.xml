@@ -7,4 +7,6 @@
 <fullyQualifiedTypeName name="jssc.SerialPortEventListener"/>
 <fullyQualifiedTypeName name="java.util.ArrayList"/>
 <fullyQualifiedTypeName name="java.lang.System"/>
+<fullyQualifiedTypeName name="java.util.Arrays"/>
+<fullyQualifiedTypeName name="Connect.Conn"/>
 </qualifiedTypeNameHistroy>
