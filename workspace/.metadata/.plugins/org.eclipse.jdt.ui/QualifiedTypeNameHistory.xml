@@ -6,7 +6,9 @@
 <fullyQualifiedTypeName name="jssc.SerialPortException"/>
 <fullyQualifiedTypeName name="jssc.SerialPortEventListener"/>
 <fullyQualifiedTypeName name="java.util.ArrayList"/>
-<fullyQualifiedTypeName name="java.lang.System"/>
 <fullyQualifiedTypeName name="java.util.Arrays"/>
 <fullyQualifiedTypeName name="Connect.Conn"/>
+<fullyQualifiedTypeName name="net.sourceforge.tess4j.Tesseract"/>
+<fullyQualifiedTypeName name="java.io.File"/>
+<fullyQualifiedTypeName name="java.lang.System"/>
 </qualifiedTypeNameHistroy>

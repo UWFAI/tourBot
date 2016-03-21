@@ -17,3 +17,4 @@ org.eclipse.jdt.core.compiler.problem.assertIdentifier=error
 org.eclipse.jdt.core.compiler.problem.enumIdentifier=error
 org.eclipse.jdt.core.compiler.source=1.7
 org.eclipse.jdt.core.timeoutForParameterNameFromAttachedJavadoc=50
+org.eclipse.jdt.core.userLibrary.Tess4J=<?xml version\="1.0" encoding\="UTF-8"?>\r\n<userlibrary systemlibrary\="false" version\="2">\r\n\t<archive path\="C\:/Users/AIRG/Downloads/Tess4J-3.0-src/Tess4J/dist/tess4j-3.0.jar">\r\n\t\t<attributes>\r\n\t\t\t<attribute name\="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value\="C\:/Users/AIRG/Downloads/Tess4J-3.0-src/Tess4J/lib/win32-x86"/>\r\n\t\t</attributes>\r\n\t</archive>\r\n</userlibrary>\r\n
