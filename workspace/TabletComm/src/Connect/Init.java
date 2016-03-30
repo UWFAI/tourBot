@@ -2,11 +2,8 @@ package Connect;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.Scanner;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.text.DateFormat;
+
 import Connect.Conn;
 
 public class Init { 
@@ -46,6 +43,16 @@ public class Init {
 		                System.out.println(s);  
 		            } 
 				
+					//kill app if already running
+					
+					 p = Runtime.getRuntime().exec("C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb shell am force-stop com.example.airg.adbtest");
+						
+						stdInput = new BufferedReader(new
+				                 InputStreamReader(p.getInputStream()));
+						
+						while ((s = stdInput.readLine()) != null) {
+			                System.out.println(s);  
+			            } 
 					
 					// Run app on device
 					// Set com.package.name to correct name for the app
@@ -59,18 +66,28 @@ public class Init {
 		                System.out.println(s);  
 		            } 
 					
-					System.out.println("Waiting 10 Secords for app to start...\n ");
-					Thread.sleep(10000);                 //1000 milliseconds is one second.
+					System.out.println("Waiting 5 Secords for app to start...\n ");
+					Thread.sleep(5000);                 //1000 milliseconds is one second.
 				
 					System.out.println("Initializing connection...\n");
 					//Run socket host 
-					 Conn c = new Conn();
+					 final Conn c = new Conn();
 				     c.initializeConnection();
+				     
+				     
+				     new Thread( new Runnable() {
+				            public void run() {
 
-				     while(c.sc.hasNext()) {
-				     System.out.println(System.currentTimeMillis() + " / " + c.sc.nextLine());
-				     }
-					  		
+			            	while(c.sc.hasNext()) {
+			            		System.out.println(DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+			            				DateFormat.MEDIUM).format(System.currentTimeMillis()) + ": " + c.sc.nextLine());
+			            	}
+			            }
+			        }).start();	
+				     
+				     
+				     
+				     
 				}
 			
 				catch (Exception e) {
@@ -78,6 +95,7 @@ public class Init {
 				}
 
 	}
+	
 	
 	
 

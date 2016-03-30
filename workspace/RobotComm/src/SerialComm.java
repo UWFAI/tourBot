@@ -9,8 +9,8 @@ public class SerialComm {
 		
 		bot = new IRobot();
 		
-		bot.sensorList.add(19);
-		bot.sensorList.add(20);
+		bot.sensorList.add(19);// Distance
+		bot.sensorList.add(20);// Angle
 		bot.sensors_update();
 		
 		

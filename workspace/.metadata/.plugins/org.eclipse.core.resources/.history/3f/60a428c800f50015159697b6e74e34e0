@@ -1,0 +1,6 @@
+import javax.swing.JFrame;
+
+@SuppressWarnings("all")
+public class Window extends JFrame{
+
+}

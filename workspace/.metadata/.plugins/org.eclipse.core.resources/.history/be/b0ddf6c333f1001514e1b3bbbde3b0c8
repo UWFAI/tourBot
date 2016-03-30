@@ -1,0 +1,58 @@
+
+public class Controller {
+	
+	IRobot bot;
+	Quadtree quadtree;
+	boolean run = true;
+	
+	public Controller() {
+		
+		bot = new IRobot();
+		quadtree = new Quadtree(1000,1000);
+		
+		while (run) AI();
+		
+	}
+	
+	String state = "move";
+	public void AI(){
+		// if quadtree complete set state to "complete"
+		// bot.sensors_update();
+		switch(state){
+			case "move": AI_state_move(); break;
+			case "reverse": AI_state_reverse(); break;
+			case "turn left": AI_state_turn_left(); break;
+			case "turn right": AI_state_turn_right(); break;
+			default: run = false;
+		}
+	}
+	
+	public void AI_state_move(){
+		// if bumpers not hitting 
+		// // send move forward
+		// else
+		// // add point to quadtree
+		// // if (only left) or (only front) bumper set state to "turn right"
+		// // if (only right) or (right and front) bumper set state to "turn left"
+		// // if all bumpers set state to "turn reverse"
+	}
+	public void AI_state_reverse(){
+		// send move in reverse slowly
+		// if distance > x and all bumpers not set
+		// // set state to "turn right"
+	}
+	public void AI_state_turn_left(){
+		// send rotate left slowly
+		// if angle > x
+		// // set state to "move"
+	}
+	public void AI_state_turn_right(){
+		// send rotate right slowly
+		// if angle > x
+		// // set state to "move"
+	}
+	
+	
+	// just main
+	public static void main(String[] args) {new Controller();}
+}

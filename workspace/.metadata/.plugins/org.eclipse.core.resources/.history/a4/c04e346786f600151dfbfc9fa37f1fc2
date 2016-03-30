@@ -1,0 +1,116 @@
+import java.awt.BorderLayout;
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.BoxLayout;
+import java.awt.Color;
+import javax.swing.JTabbedPane;
+import javax.swing.JButton;
+import javax.swing.JScrollPane;
+import javax.swing.JList;
+import javax.swing.JSlider;
+import java.awt.Dimension;
+import javax.swing.SwingConstants;
+import java.awt.SystemColor;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.AbstractListModel;
+
+public class DebugWindow extends JFrame {
+
+	private JPanel contentPane;
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					DebugWindow frame = new DebugWindow();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the frame.
+	 */
+	public DebugWindow() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 763, 573);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		contentPane.setLayout(null);
+		
+		JPanel panel = new JPanel();
+		panel.setBackground(SystemColor.menu);
+		panel.setBounds(12, 13, 200, 200);
+		contentPane.add(panel);
+		panel.setLayout(null);
+		
+		JSlider slider = new JSlider();
+		slider.setPaintTicks(true);
+		slider.setMinorTickSpacing(10);
+		slider.setMajorTickSpacing(50);
+		slider.setBounds(30, 170, 170, 30);
+		panel.add(slider);
+		
+		JSlider slider_1 = new JSlider();
+		slider_1.setPaintTicks(true);
+		slider_1.setMinorTickSpacing(10);
+		slider_1.setMajorTickSpacing(50);
+		slider_1.setValue(0);
+		slider_1.setMinimum(-100);
+		slider_1.setOrientation(SwingConstants.VERTICAL);
+		slider_1.setBounds(0, 0, 30, 170);
+		panel.add(slider_1);
+		
+		JPanel panel_1 = new JPanel();
+		panel_1.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				///
+			}
+		});
+		panel_1.setBackground(Color.WHITE);
+		panel_1.setBounds(30, 0, 170, 170);
+		panel.add(panel_1);
+		
+		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		tabbedPane.setBounds(234, 13, 500, 500);
+		contentPane.add(tabbedPane);
+		
+		JPanel panel_2 = new JPanel();
+		tabbedPane.addTab("Tree", null, panel_2, null);
+		
+		JPanel panel_3 = new JPanel();
+		tabbedPane.addTab("Other", null, panel_3, null);
+		
+		JButton btnTurnOff = new JButton("turn off");
+		btnTurnOff.setBounds(12, 488, 200, 25);
+		contentPane.add(btnTurnOff);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(12, 226, 200, 249);
+		contentPane.add(scrollPane);
+		
+		JList list = new JList();
+		list.setModel(new AbstractListModel() {
+			String[] values = new String[] {"Direction = 0", "Speed = 0"};
+			public int getSize() {
+				return values.length;
+			}
+			public Object getElementAt(int index) {
+				return values[index];
+			}
+		});
+		scrollPane.setViewportView(list);
+	}
+}
