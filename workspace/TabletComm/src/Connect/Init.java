@@ -3,6 +3,7 @@ package Connect;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
+import java.util.Scanner;
 
 import Connect.Conn;
 
@@ -80,14 +81,24 @@ public class Init {
 
 			            	while(c.sc.hasNext()) {
 			            		System.out.println(DateFormat.getDateTimeInstance(DateFormat.SHORT, 
-			            				DateFormat.MEDIUM).format(System.currentTimeMillis()) + ": " + c.sc.nextLine());
+			            				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Recieved: " + c.sc.nextLine() +"\n");
 			            	}
 			            }
 			        }).start();	
 				     
-				     
-				     
-				     
+				  // create a scanner so we can read the command-line input
+				    Scanner scannerIn = new Scanner(System.in);
+				    
+				    String msg = "";
+				    
+				    while(scannerIn.hasNext()){
+				    	msg = scannerIn.next();
+				    	c.out.println(msg);
+				    	System.out.println(DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+	            				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Sent: " + msg + "\n");
+				    }
+				      
+				     scannerIn.close();
 				}
 			
 				catch (Exception e) {

@@ -11,7 +11,7 @@ import java.net.UnknownHostException;
 public class Conn {
 	
 	private Socket socket;
-	private PrintWriter out;
+	public PrintWriter out;
 	public Scanner sc;
 	private String s = null;
 	 
