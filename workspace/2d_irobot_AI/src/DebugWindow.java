@@ -48,6 +48,8 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import java.awt.Cursor;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 @SuppressWarnings("serial")
 public class DebugWindow extends JFrame {
@@ -502,6 +504,14 @@ public class DebugWindow extends JFrame {
 					.addComponent(panel_2, GroupLayout.PREFERRED_SIZE, 242, GroupLayout.PREFERRED_SIZE)
 					.addContainerGap())
 		);
+		
+		JButton btnStartSimulator = new JButton("Start Simulator");
+		btnStartSimulator.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				new create2_environment.Controller();
+			}
+		});
+		panel_2.add(btnStartSimulator);
 		panel_Connection.setLayout(gl_panel_Connection);
 
 		//////////////////////////////////////////////////////////////////////////////////
