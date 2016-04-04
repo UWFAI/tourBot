@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<docs>
+    <doc>
+	    <id>Drive</id>
+	    <text></text>
+    </doc>
+    <doc>
+	    <id>Clean</id>
+	    <text></text>
+    </doc>
+    <doc>
+	    <id>Reset</id>
+	    <text></text>
+    </doc>
+    <doc>
+	    <id>Buttons</id>
+	    <text>LEDs</text>
+    </doc>
+    <doc>
+	    <id>Song</id>
+	    <text></text>
+    </doc>
+    <doc>
+	    <id>Sensors</id>
+	    <text></text>
+    </doc>
+</docs>

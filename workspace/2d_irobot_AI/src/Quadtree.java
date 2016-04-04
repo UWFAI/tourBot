@@ -1,11 +1,18 @@
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Quadtree {
+	
+	// for debugging, it needs to talk to everyone
+	public Controller controller = null;
 	
 	// the starting node
 	Node root;
 	
 	// max depth that the tree can be
-	int max_depth = 10;
+	int max_depth = 5;
 	
 	// I was thinking that this has a way of knowing if a place is free, !free, !Checked
 	// if we are to do this we need to send a point every step and not just at the 
@@ -13,8 +20,24 @@ public class Quadtree {
 	boolean complete = true;
 	
 	// 
-	public Quadtree(int x1, int y1, int x2, int y2){
+	public Quadtree(Controller con, int x1, int y1, int x2, int y2){
+		controller = con;
 		root = new Node(x1,y1,x2,y2);
+		
+		controller.window.panel_tree.painter = this;
+		controller.window.panel_tree.reSize(root.x2 - root.x1, root.y2 - root.y1);
+		
+		set_point(200, 200);
+		
+		// a simple timer to repaint the tree
+		Timer timer = new Timer();
+		TimerTask myTask = new TimerTask() {
+		    @Override
+		    public void run() {
+		    	controller.window.panel_tree.repaint();
+		    }
+		};
+		timer.schedule(myTask, 2000, 2000);
 	}
 	
 	public void set_point(int x, int y){
@@ -85,4 +108,29 @@ public class Quadtree {
 		}
 		
 	}
+	
+	
+	public void paint(Graphics g){
+		
+		Graphics2D g2 = (Graphics2D) g;
+		
+		// draw all the nodes recursively
+		draw_node(root, g2);
+		
+		g2.drawString(String.valueOf(controller.window.panel_tree.getWidth()), 25, 25);
+	}
+	private void draw_node(Node node, Graphics2D g2){
+		// draw the current nodes outline
+		g2.drawLine(node.x1, node.y1, node.x2, node.y1);// top
+		g2.drawLine(node.x1, node.y2, node.x2, node.y2);// bottom
+		g2.drawLine(node.x1, node.y1, node.x1, node.y2);// left
+		g2.drawLine(node.x2, node.y1, node.x2, node.y2);// right
+		
+		if (node.UL != null) draw_node(node.UL, g2);
+		if (node.UR != null) draw_node(node.UR, g2);
+		if (node.DL != null) draw_node(node.DL, g2);
+		if (node.DR != null) draw_node(node.DR, g2);
+		
+	}
+	
 }

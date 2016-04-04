@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<docs>
+    <doc id="drive">
+	    <id>Drive</id>
+	    <text>Drive test</text>
+    </doc>
+    <doc id="clean">
+	    <id>Clean</id>
+	    <text>Clean test</text>
+    </doc>
+    <doc id="reset">
+	    <id>Reset</id>
+	    <text>Reset test</text>
+    </doc>
+    <doc id="buttons">
+	    <id>Buttons</id>
+	    <text>Buttons test</text>
+    </doc>
+    <doc id="leds">
+	    <id>LEDs</id>
+	    <text>LEDs test</text>
+    </doc>
+    <doc id="song">
+	    <id>Song</id>
+	    <text>Song test</text>
+    </doc>
+    <doc id="sensors">
+	    <id>Sensors</id>
+	    <text>Sensors test</text>
+    </doc>
+</docs>

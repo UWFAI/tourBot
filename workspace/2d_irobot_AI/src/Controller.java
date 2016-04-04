@@ -14,12 +14,14 @@ public class Controller {
 	DebugWindow window;
 	public Controller() {
 		window = new DebugWindow();
-		/**/
+		quadtree = new Quadtree(this, 0, 0, 1000, 1000);
+		
+		/*
 		bot = new IRobot();
 		quadtree = new Quadtree(0, 0, tree_root_size, tree_root_size);
 		
 		while (run) AI();
-		
+		*/
 	}
 	
 	public void update_bot_point(){
