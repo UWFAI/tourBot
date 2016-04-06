@@ -20,9 +20,10 @@ public class TabletComm {
 	
 	Controller con;
 	
-	//private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
-	private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
+	private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
+	//private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
 	private static int port = 38300;
+	private static boolean connected = false;
 	private volatile static Socket socket;
 	public volatile static PrintWriter out;
 	public volatile static Scanner sc;
@@ -34,8 +35,7 @@ public class TabletComm {
 	* 
 	*/
 	public TabletComm (Controller con){
-		this.con = con;
-		
+		this.con = con;	
 		
 		//Start new thread for tablet communication
 				new Thread( new Runnable() {
@@ -44,6 +44,7 @@ public class TabletComm {
 		            		runADB();	
 		            		
 		            		if (connect() == true){
+		            			connected = true;
 		            			startScanner();
 		            			sendMsg("I am connected to the laptop!");
 		            			
@@ -83,6 +84,7 @@ public class TabletComm {
 			
 			//Wait for app to start
 			printWaitingDots("\nWaiting for app to start.", 5);
+			con.window.tabletTextArea.append("\n");
 	
 		}
 	
@@ -183,10 +185,18 @@ public class TabletComm {
 	   * @param msg - message you want to send
 	   */
 	public void sendMsg (String msg){
-		out.println(msg);
-		msg = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
-				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Sent: " + msg +"\n";
-		con.window.tabletTextArea.append(msg);
+		
+		if (connected == true){
+			out.println(msg);
+			msg = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+					DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Sent: " + msg +"\n";
+			con.window.tabletTextArea.append(msg);
+		}
+		else
+		{
+			con.window.tabletTextArea.append("Tablet not connected.\n");
+		}
+		
 	}
 	
 	
@@ -248,9 +258,7 @@ public class TabletComm {
 	}
 	
 	private void getLocation(){
-		sendMsg("");
-		
-		
+		sendMsg("");	
 		
 	}
 
