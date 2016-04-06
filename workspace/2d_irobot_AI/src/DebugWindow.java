@@ -98,6 +98,8 @@ public class DebugWindow extends JFrame {
 	
 	Random r = new Random();
 	public JLabel label_spDir_sent;
+	private JTextField msgTextField;
+	public JTextArea tabletTextArea;
 	
 	@SuppressWarnings("static-access")
 	private void thread_run() {
@@ -577,6 +579,40 @@ public class DebugWindow extends JFrame {
 		
 		JPanel panel_Kinect = new JPanel();
 		tabbedPane.addTab("Kinect", null, panel_Kinect, null);
+		
+		JPanel panel_Tablet = new JPanel();
+		tabbedPane.addTab("Tablet", null, panel_Tablet, null);
+		panel_Tablet.setLayout(null);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(6, 6, 480, 461);
+		panel_Tablet.add(scrollPane_1);
+		
+		tabletTextArea = new JTextArea();
+		scrollPane_1.setViewportView(tabletTextArea);
+		
+		msgTextField = new JTextField();
+		msgTextField.setBounds(6, 480, 351, 28);
+		panel_Tablet.add(msgTextField);
+		msgTextField.setColumns(10);
+		
+		JButton btn_tabletSend = new JButton("Send");
+		btn_tabletSend.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try{
+					if (msgTextField.getText().length() > 0)
+					{
+						con.tab.sendMsg(msgTextField.getText());
+						msgTextField.setText("");
+					}
+				}
+				catch (NullPointerException nullPoint){
+					
+				}
+			}
+		});
+		btn_tabletSend.setBounds(369, 481, 117, 29);
+		panel_Tablet.add(btn_tabletSend);
 		
 		//////////////////////////////////////////////////////////////////////////////////
 		setVisible(true);

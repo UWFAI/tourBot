@@ -143,9 +143,12 @@ public class TabletComm {
 		
 		new Thread( new Runnable() {
             public void run() {
+            	String scannerLine = "";
             	while(sc.hasNext()) {
-            		System.out.println(DateFormat.getDateTimeInstance(DateFormat.SHORT, 
-            				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Recieved: " + sc.nextLine() +"\n");
+            		scannerLine = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+            				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Recieved: " + sc.nextLine() +"\n";
+            		//System.out.println(scannerLine);
+            		con.window.tabletTextArea.append(scannerLine);
             	}
             }
 		}).start();	
@@ -179,8 +182,11 @@ public class TabletComm {
 	   * 
 	   * @param msg - message you want to send
 	   */
-	private void sendMsg (String msg){
+	public void sendMsg (String msg){
 		out.println(msg);
+		msg = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Sent: " + msg +"\n";
+		con.window.tabletTextArea.append(msg);
 	}
 	
 	
