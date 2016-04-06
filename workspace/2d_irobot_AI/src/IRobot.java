@@ -41,6 +41,8 @@ public class IRobot{
 	private short sent_speed = 0;
 	private short sent_direction = 0;
 	
+	public String CurMove = "";
+	
 	// variables that store the input from the sensors
 	private int distance = 0;
 	private int battery_Charge = 0;
@@ -456,13 +458,17 @@ public class IRobot{
 		if (cur_direction == 0) {
 			opcodes.add(0x80); // [Radius high byte]
 			opcodes.add(0x00); // [Radius low byte]
+			CurMove = "137 "+sp_h+" "+sp_l+" 0x80 0x00";
 		} else {
 			opcodes.add(dr_h); // [Radius high byte]
 			opcodes.add(dr_l); // [Radius low byte]
+			CurMove = "137 "+sp_h+" "+sp_l+" "+dr_h+" "+dr_l;
 		}
 		
 		sent_speed = cur_speed;
 		sent_direction = cur_direction;
+		
+		
 	}
 	
 	/**

@@ -1,6 +1,9 @@
 
 public class Controller {
 	
+	Communication com;
+	create2_environment.Controller sim_con = null;
+	
 	IRobot bot;
 	Quadtree quadtree;
 	boolean run = true;
@@ -12,9 +15,12 @@ public class Controller {
 	double bot_direction = 0;
 	
 	DebugWindow window;
+	
 	public Controller() {
-		window = new DebugWindow();
+		window = new DebugWindow(this);
 		quadtree = new Quadtree(this, 0, 0, 1000, 1000);
+		
+		com = new Communication(this);
 		
 		/*
 		bot = new IRobot();

@@ -27,6 +27,7 @@ public class Robot_IO {
 		
 		return a;
 	}
+	
 	// getters and setters for the raw values
 	public String get_input() {
 		return input;

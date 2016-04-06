@@ -71,7 +71,7 @@ public class Window extends JFrame
 	}
 	
 	private void initialize() {
-		
+		/*
 		JPanel IO = new JPanel();
 		IO.setBorder(new BevelBorder(BevelBorder.RAISED, null, null, null, null));
 		this.getContentPane().add(IO, BorderLayout.WEST);
@@ -107,6 +107,7 @@ public class Window extends JFrame
 		gbc_scrollPane.gridy = 0;
 		IO.add(scrollPane, gbc_scrollPane);
 		
+		
 		JButton btnNewButton = new JButton("Send Commands");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -114,7 +115,6 @@ public class Window extends JFrame
 			}
 		});
 		
-				
 		GridBagConstraints gbc_btnNewButton = new GridBagConstraints();
 		gbc_btnNewButton.weighty = 0.5;
 		gbc_btnNewButton.fill = GridBagConstraints.BOTH;
@@ -122,6 +122,7 @@ public class Window extends JFrame
 		gbc_btnNewButton.gridx = 0;
 		gbc_btnNewButton.gridy = 1;
 		IO.add(btnNewButton, gbc_btnNewButton);
+		
 		
 		JScrollPane scrollPane_1 = new JScrollPane();
 		scrollPane_1.setViewportBorder(null);
@@ -148,6 +149,7 @@ public class Window extends JFrame
 		gbc_scrollPane_1.gridx = 0;
 		gbc_scrollPane_1.gridy = 2;
 		IO.add(scrollPane_1, gbc_scrollPane_1);
+		*/
 		
 		JPanel panel_1 = new JPanel();
 		this.getContentPane().add(panel_1, BorderLayout.CENTER);

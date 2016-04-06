@@ -54,6 +54,8 @@ import java.awt.event.ActionEvent;
 @SuppressWarnings("serial")
 public class DebugWindow extends JFrame {
 
+	private static Controller con;
+	
 	private JPanel contentPane;
 	private JTable table;
 	private DefaultTableModel table_model;
@@ -95,6 +97,8 @@ public class DebugWindow extends JFrame {
 	}
 	
 	Random r = new Random();
+	private JLabel label_spDir_sent;
+	
 	@SuppressWarnings("static-access")
 	private void thread_run() {
 		
@@ -137,7 +141,9 @@ public class DebugWindow extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public DebugWindow() {
+	public DebugWindow(final Controller con) {
+		this.con = con;
+		
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
@@ -193,9 +199,9 @@ public class DebugWindow extends JFrame {
 		panel.add(panel_mouse_move, "cell 1 0 1 2,grow");
 		
 		speed_slider = new JSlider();
+		speed_slider.setPaintTicks(true);
 		panel.add(speed_slider, "cell 0 0 1 2,grow");
 		speed_slider.setSize(new Dimension(50, 50));
-		speed_slider.setPaintTicks(true);
 		speed_slider.setMinorTickSpacing(10);
 		speed_slider.setMajorTickSpacing(50);
 		speed_slider.setValue(0);
@@ -203,18 +209,26 @@ public class DebugWindow extends JFrame {
 		speed_slider.setOrientation(SwingConstants.VERTICAL);
 		
 		direction_slider = new JSlider();
-		direction_slider.setSize(new Dimension(50, 50));
 		direction_slider.setPaintTicks(true);
+		direction_slider.setPaintTrack(false);
+		direction_slider.setSize(new Dimension(50, 50));
 		direction_slider.setMinorTickSpacing(10);
 		direction_slider.setMajorTickSpacing(50);
 		direction_slider.setValue(0);
 		direction_slider.setMinimum(-100);
 		panel.add(direction_slider, "cell 1 2,grow");
-
+		
+		label_spDir_sent = new JLabel("000");
+		sl_contentPane.putConstraint(SpringLayout.NORTH, label_spDir_sent, 6, SpringLayout.SOUTH, panel);
+		sl_contentPane.putConstraint(SpringLayout.WEST, label_spDir_sent, 10, SpringLayout.WEST, panel);
+		sl_contentPane.putConstraint(SpringLayout.EAST, label_spDir_sent, -10, SpringLayout.EAST, panel);
+		contentPane.add(label_spDir_sent);
+		
 		//////////////////////////////////////////////////////////////////////////////////
 		JPanel panel_4 = new JPanel();
-		sl_contentPane.putConstraint(SpringLayout.NORTH, panel_4, 6, SpringLayout.SOUTH, panel);
+		sl_contentPane.putConstraint(SpringLayout.NORTH, panel_4, 25, SpringLayout.SOUTH, panel);
 		sl_contentPane.putConstraint(SpringLayout.WEST, panel_4, 0, SpringLayout.WEST, panel);
+		sl_contentPane.putConstraint(SpringLayout.SOUTH, panel_4, -1, SpringLayout.SOUTH, contentPane);
 		sl_contentPane.putConstraint(SpringLayout.EAST, panel_4, 200, SpringLayout.WEST, contentPane);
 		panel_4.setBorder(new TitledBorder(null, "Watched Variables", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		contentPane.add(panel_4);
@@ -252,7 +266,7 @@ public class DebugWindow extends JFrame {
 		//////////////////////////////////////////////////////////////////////////////////
 		// the main tab body of the app
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		sl_contentPane.putConstraint(SpringLayout.NORTH, tabbedPane, 10, SpringLayout.NORTH, contentPane);
+		sl_contentPane.putConstraint(SpringLayout.NORTH, tabbedPane, 5, SpringLayout.NORTH, contentPane);
 		sl_contentPane.putConstraint(SpringLayout.WEST, tabbedPane, 6, SpringLayout.EAST, panel);
 		sl_contentPane.putConstraint(SpringLayout.SOUTH, tabbedPane, -1, SpringLayout.SOUTH, contentPane);
 		sl_contentPane.putConstraint(SpringLayout.EAST, tabbedPane, -1, SpringLayout.EAST, contentPane);
@@ -469,14 +483,6 @@ public class DebugWindow extends JFrame {
 		);
 		panel_7.setLayout(gl_panel_7);
 		
-		JButton btnTurnOff = new JButton("Turn Off");
-		sl_contentPane.putConstraint(SpringLayout.SOUTH, panel_4, -5, SpringLayout.NORTH, btnTurnOff);
-		sl_contentPane.putConstraint(SpringLayout.NORTH, btnTurnOff, -50, SpringLayout.SOUTH, contentPane);
-		sl_contentPane.putConstraint(SpringLayout.SOUTH, btnTurnOff, -1, SpringLayout.SOUTH, contentPane);
-		sl_contentPane.putConstraint(SpringLayout.WEST, btnTurnOff, 0, SpringLayout.WEST, panel);
-		sl_contentPane.putConstraint(SpringLayout.EAST, btnTurnOff, 0, SpringLayout.EAST, panel);
-		contentPane.add(btnTurnOff);
-		
 		JPanel panel_Connection = new JPanel();
 		tabbedPane.addTab("Connection", null, panel_Connection, null);
 		
@@ -487,8 +493,8 @@ public class DebugWindow extends JFrame {
 		panel_2.setBorder(new TitledBorder(null, "Simulator", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		GroupLayout gl_panel_Connection = new GroupLayout(panel_Connection);
 		gl_panel_Connection.setHorizontalGroup(
-			gl_panel_Connection.createParallelGroup(Alignment.LEADING)
-				.addGroup(Alignment.TRAILING, gl_panel_Connection.createSequentialGroup()
+			gl_panel_Connection.createParallelGroup(Alignment.TRAILING)
+				.addGroup(gl_panel_Connection.createSequentialGroup()
 					.addContainerGap()
 					.addGroup(gl_panel_Connection.createParallelGroup(Alignment.TRAILING)
 						.addComponent(panel_1, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
@@ -496,23 +502,67 @@ public class DebugWindow extends JFrame {
 					.addContainerGap())
 		);
 		gl_panel_Connection.setVerticalGroup(
-			gl_panel_Connection.createParallelGroup(Alignment.LEADING)
-				.addGroup(Alignment.TRAILING, gl_panel_Connection.createSequentialGroup()
+			gl_panel_Connection.createParallelGroup(Alignment.TRAILING)
+				.addGroup(gl_panel_Connection.createSequentialGroup()
 					.addContainerGap()
-					.addComponent(panel_1, GroupLayout.PREFERRED_SIZE, 242, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED, 13, Short.MAX_VALUE)
-					.addComponent(panel_2, GroupLayout.PREFERRED_SIZE, 242, GroupLayout.PREFERRED_SIZE)
+					.addComponent(panel_1, GroupLayout.DEFAULT_SIZE, 240, Short.MAX_VALUE)
+					.addGap(11)
+					.addComponent(panel_2, GroupLayout.DEFAULT_SIZE, 240, Short.MAX_VALUE)
 					.addContainerGap())
 		);
+		
+		JButton button_1 = new JButton("Connect");
+		GroupLayout gl_panel_1 = new GroupLayout(panel_1);
+		gl_panel_1.setHorizontalGroup(
+			gl_panel_1.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_1.createSequentialGroup()
+					.addComponent(button_1, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
+					.addContainerGap(357, Short.MAX_VALUE))
+		);
+		gl_panel_1.setVerticalGroup(
+			gl_panel_1.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_1.createSequentialGroup()
+					.addComponent(button_1)
+					.addContainerGap(196, Short.MAX_VALUE))
+		);
+		panel_1.setLayout(gl_panel_1);
 		
 		JButton btnStartSimulator = new JButton("Start Simulator");
 		btnStartSimulator.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				new create2_environment.Controller();
+				
+				con.sim_con = new create2_environment.Controller();
 			}
 		});
-		panel_2.add(btnStartSimulator);
+		
+		JButton btnConect = new JButton("Connect");
+		btnConect.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+			}
+		});
+		GroupLayout gl_panel_2 = new GroupLayout(panel_2);
+		gl_panel_2.setHorizontalGroup(
+			gl_panel_2.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_2.createSequentialGroup()
+					.addComponent(btnStartSimulator)
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addComponent(btnConect, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
+					.addContainerGap(244, Short.MAX_VALUE))
+		);
+		gl_panel_2.setVerticalGroup(
+			gl_panel_2.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_2.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(gl_panel_2.createParallelGroup(Alignment.BASELINE)
+						.addComponent(btnStartSimulator)
+						.addComponent(btnConect))
+					.addContainerGap(185, Short.MAX_VALUE))
+		);
+		panel_2.setLayout(gl_panel_2);
 		panel_Connection.setLayout(gl_panel_Connection);
+		
+		JPanel panel_AI = new JPanel();
+		tabbedPane.addTab("AI", null, panel_AI, null);
 
 		//////////////////////////////////////////////////////////////////////////////////
 		// tree tab
@@ -525,8 +575,8 @@ public class DebugWindow extends JFrame {
 		panel_tree.setBackground(Color.WHITE);
 		scrollPane_Tree.setViewportView(panel_tree);
 		
-		JPanel panel_3 = new JPanel();
-		tabbedPane.addTab("Kinect", null, panel_3, null);
+		JPanel panel_Kinect = new JPanel();
+		tabbedPane.addTab("Kinect", null, panel_Kinect, null);
 		
 		//////////////////////////////////////////////////////////////////////////////////
 		setVisible(true);
@@ -556,7 +606,6 @@ public class DebugWindow extends JFrame {
 				}
 			}
 		} catch (SAXException | IOException | ParserConfigurationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
         
