@@ -6,6 +6,7 @@ public class Controller {
 	
 	IRobot bot;
 	Quadtree quadtree;
+	TabletComm tab;
 	boolean run = true;
 	
 	// some helper variables
@@ -23,6 +24,8 @@ public class Controller {
 		com = new Communication(this);
 		
 		bot = new IRobot(com);
+		
+		tab = new TabletComm(this);
 		while (run) AI();
 	}
 	

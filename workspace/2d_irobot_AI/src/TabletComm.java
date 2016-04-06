@@ -45,6 +45,7 @@ public class TabletComm {
 		            		
 		            		if (connect() == true){
 		            			startScanner();
+		            			sendMsg("I am connected to the laptop!");
 		            			
 		            			//sendMsgTest();
 		            		}
