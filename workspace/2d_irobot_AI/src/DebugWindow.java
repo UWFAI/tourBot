@@ -525,6 +525,9 @@ public class DebugWindow extends JFrame {
 		panel_tree.setBackground(Color.WHITE);
 		scrollPane_Tree.setViewportView(panel_tree);
 		
+		JPanel panel_3 = new JPanel();
+		tabbedPane.addTab("Kinect", null, panel_3, null);
+		
 		//////////////////////////////////////////////////////////////////////////////////
 		setVisible(true);
 		

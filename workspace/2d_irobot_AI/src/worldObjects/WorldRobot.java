@@ -19,16 +19,13 @@ public class WorldRobot extends WorldObject{
 	}
 	
 	public void update(){
-		
-		
-		
 		x+=lengthdir_x(velocity,direction);
 		y+=lengthdir_y(velocity,direction);
 		direction+=theta;
 		
 		runNextOpCode();
-		
 	}
+	
 	public void draw(Graphics2D g){
 		x1=(int)x + (int)(width*pixelsPerMeter/2);
 		y1=(int)y + (int)(height*pixelsPerMeter/2);
@@ -41,15 +38,17 @@ public class WorldRobot extends WorldObject{
 				(y1+(int)(height*pixelsPerMeter/2))-(int)(Math.sin(Math.toRadians(direction))*(int)(height*pixelsPerMeter/2)));
 		
 	}
+	
 	public void runNextOpCode(){
 		int opcode = (int)controller.io.getNextInput();
 		switch(opcode){
-		case 137:drive(); break;
-		case 145:driveDirect();break;
-		case -2: stop(); break;
-		case -1: reset(); break;
-			}
+			case 137:drive(); break;
+			case 145:driveDirect(); break;
+			case -2: stop(); break;
+			case -1: reset(); break;
+		}
 	}
+	
 	public int twoComp(int n, int base){
 		int j;
 		j=0;
@@ -85,8 +84,8 @@ public class WorldRobot extends WorldObject{
 	}
 	
 	public void reset(){
-		x=300;
-		y=300;
+		x = 300;
+		y = 300;
 		//velocity=0;
 		//theta=0;
 		//turnRadius=0;
