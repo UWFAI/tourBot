@@ -20,8 +20,8 @@ public class TabletComm {
 	
 	Controller con;
 	
-	private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
-	//private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
+	//private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
+	private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
 	private static int port = 38300;
 	private volatile static Socket socket;
 	public volatile static PrintWriter out;
@@ -65,24 +65,24 @@ public class TabletComm {
 	private void runADB(){
 		try {
 			// run the adb bridge
-			System.out.println("Attempting to run Android Debug Bridge.....\n");
+			con.window.tabletTextArea.append("Attempting to run Android Debug Bridge.....\n\n");
 			runConsoleCommand(adbLocation + " devices");
 			
 			//Wait 4 seconds so adb can start up if it needs to.	
 			printWaitingDots("Starting ADB and checking for device.", 4);
 	
 			// Forward ports for socket communication
-			System.out.println("Running: adb forward tcp:" + port +" tcp:"+ port +" \n");
+			con.window.tabletTextArea.append("Running: adb forward tcp:" + port +" tcp:"+ port +" \n\n");
 			runConsoleCommand(adbLocation + " forward tcp:38300 tcp:38300");
 				 
 			//kill app if already running
 			runConsoleCommand(adbLocation + " shell am force-stop com.example.airg.adbtest");
-				
+			
 			// Run app on device 
 			runConsoleCommand(adbLocation + " shell am start -n com.example.airg.adbtest/com.example.airg.adbtest.MyActivity");
 			
 			//Wait for app to start
-			printWaitingDots("Waiting for app to start.", 5);
+			printWaitingDots("\nWaiting for app to start.", 5);
 	
 		}
 	
@@ -103,7 +103,7 @@ public class TabletComm {
 	private boolean connect(){
 		  //Create socket connection
         try{
-        	System.out.println("Attempting socket connection.....\n");
+        	con.window.tabletTextArea.append("Attempting socket connection.....\n");
             socket = new Socket("localhost", 38300);
             out = new PrintWriter(socket.getOutputStream(), true);
             sc = new Scanner(socket.getInputStream());
@@ -125,9 +125,9 @@ public class TabletComm {
             return true;
 
         } catch (UnknownHostException e) {
-            System.out.println("Socket connection problem (Unknown host)" + e.getStackTrace());
+        	con.window.tabletTextArea.append("Socket connection problem (Unknown host)" + e.getStackTrace());
         } catch (IOException e) {
-            System.out.println("Could not initialize I/O on socket " + e.getStackTrace());
+        	con.window.tabletTextArea.append("Could not initialize I/O on socket " + e.getStackTrace());
         } 
         
         return false;
@@ -210,11 +210,11 @@ public class TabletComm {
 		
 			//Print output from command
 			while ((s = stdInput.readLine()) != null) {
-				System.out.println(s);  
+				con.window.tabletTextArea.append(s + "\n");  
 			} 
 		}
 		catch (Exception e) {
-			System.out.println(e.toString());
+			con.window.tabletTextArea.append(e.toString() + "\n");
 		}
 		
 	}
@@ -231,18 +231,18 @@ public class TabletComm {
 		
 		try{
 			//Print message
-			System.out.print(msg);
+			con.window.tabletTextArea.append(msg);
 			//Print one dot a second until next to last dot
 			for (int i=1; i< sec; i++){
 				Thread.sleep(1000);
-				System.out.print(".");
+				con.window.tabletTextArea.append(".");
 			}
 			//Wait one second then print last dot and go to new line
 			Thread.sleep(1000);
-			System.out.print(".\n\n");
+			con.window.tabletTextArea.append(".\n\n");
 		}
 		catch (Exception e) {
-			System.out.println(e.toString());
+			con.window.tabletTextArea.append(e.toString());
 		}
 		
 	}
