@@ -10,10 +10,10 @@ public class Quadtree {
 	public Controller controller = null;
 	
 	// the starting node
-	Node root;
+	public Node root;
 	
 	// max depth that the tree can be
-	int max_depth = 10;
+	int max_depth = 15;
 	
 	// I was thinking that this has a way of knowing if a place is free, !free, !Checked
 	// if we are to do this we need to send a point every step and not just at the 
@@ -30,8 +30,8 @@ public class Quadtree {
 		
 		//set_point(200, 200, "hit");
 		//set_point(400, 200, "free");
-		set_circle( 200, 200, 50, "hit");
-		set_circle( 400, 400, 250, "free");
+		//set_circle( 200, 200, 50, "hit");
+		//set_circle( 400, 400, 25, "free");
 		
 		// a simple timer to repaint the tree
 		Timer timer = new Timer();

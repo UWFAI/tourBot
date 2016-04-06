@@ -21,7 +21,7 @@ public class WorldRobot extends WorldObject{
 	public void update(){
 		x+=lengthdir_x(velocity,direction);
 		y+=lengthdir_y(velocity,direction);
-		direction+=theta;
+		direction += theta;
 		
 		runNextOpCode();
 	}
@@ -73,14 +73,43 @@ public class WorldRobot extends WorldObject{
 		
 	}
 	
-	public void drive(){
-		velocity=controller.io.getNextInput()/100;
-		turnRadius = controller.io.getNextInput()/100;
+	public void drive() {
 		
-		if(turnRadius!=0)
-		theta=(velocity/turnRadius)/10;
-		else theta=0;
+		int sp_h = (int) controller.io.getNextInput();
+		int sp_l = (int) controller.io.getNextInput();
 		
+		int dr_h = (int) controller.io.getNextInput();
+		int dr_l = (int) controller.io.getNextInput();
+		
+		velocity = ((short) ((sp_h << 8) | sp_l))/1000.0;
+		turnRadius = ((short) ((dr_h << 8) | dr_l))/100.0;
+		
+		System.out.println(dr_h+" "+dr_l+" ");
+		System.out.println("turnRadius = "+turnRadius+"  "+(short) ((dr_h << 8) | dr_l));
+		
+		theta = (turnRadius)*velocity;
+		
+		 // Special cases:
+		 // Straight
+		if ((dr_h == 0x80 && dr_l == 0x00) || (dr_h == 0x7F && dr_l == 0xFF)) {
+			theta = 0;
+		}
+		 // Turn in place clockwise
+		if (dr_h == 0xFF && dr_l == 0xFF) {
+			velocity = 0;
+		}
+		 // Turn in place counter-clockwise
+		if (dr_h == 0x00 && dr_l == 0x01) {
+			velocity = 0;
+		}
+		
+		/*
+		if(turnRadius!=0) {
+			theta=(velocity/turnRadius)/10;
+		} else {
+			theta=0;
+		}
+		*/
 	}
 	
 	public void reset(){

@@ -22,7 +22,6 @@ public class Robot_IO {
 			s = scr.next();
 			a = Double.parseDouble(s);
 			input = input.substring(s.length()+1,input.length());
-			//System.out.println(s);
 		} catch(Exception e){}
 		
 		return a;

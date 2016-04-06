@@ -18,21 +18,17 @@ public class Controller {
 	
 	public Controller() {
 		window = new DebugWindow(this);
-		quadtree = new Quadtree(this, 0, 0, 1000, 1000);
+		quadtree = new Quadtree(this, 0, 0, 5000, 5000);// this size is in cm
 		
 		com = new Communication(this);
 		
-		/*
-		bot = new IRobot();
-		quadtree = new Quadtree(0, 0, tree_root_size, tree_root_size);
-		
+		bot = new IRobot(com);
 		while (run) AI();
-		*/
 	}
 	
 	public void update_bot_point(){
 		int dis = bot.getDistance();
-		
+		System.out.println(dis);
 		bot_x = Math.cos(Math.toRadians(bot_direction))*dis;
 		bot_y = -Math.sin(Math.toRadians(bot_direction))*dis;
 	}
@@ -64,6 +60,7 @@ public class Controller {
 	}
 	
 	public void AI_state_move(){
+		update_bot_point();
 		// if bumpers not hitting 
 		// // send move forward
 		// else
@@ -72,6 +69,8 @@ public class Controller {
 		// // if (only right) or (right and front) bumper set state to "turn left"
 		// // if all bumpers set state to "reverse"
 		
+		window.label_spDir_sent.setText(bot.CurMove);
+		
 		int bump = bot.getBumpers();
 		
 		int sp = window.get_speed();
@@ -79,6 +78,7 @@ public class Controller {
 		
 		//if (bump == 0) {
 			bot.move(sp, dr);
+			quadtree.set_circle( (int)bot_x+50, (int)bot_y+50, 25, "free");
 			//System.out.println(sp+", "+dr);
 		//} 
 		/*
@@ -112,7 +112,7 @@ public class Controller {
 		double bys = (bot_y-reverse_start_y)*(bot_y-reverse_start_y);
 		double reverse_distance = Math.sqrt(bxs + bys);
 		
-		bot.move(-20);
+		//bot.move(-20);
 		if (reverse_distance > 20) {
 			reverse_start = false;
 			state = "turn right";

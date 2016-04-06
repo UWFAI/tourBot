@@ -35,7 +35,7 @@ public class Connection {
 		new Thread( new Runnable() {
             public void run() {
             	
-            		runADB();	
+            		runADB();
             		
             		if (connect() == true){
             			startScanner();
