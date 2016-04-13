@@ -1,11 +1,23 @@
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.util.Scanner;
+
+import javax.imageio.ImageIO;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+
 
 /**
 * <h1>Tablet Communication</h1>
@@ -20,14 +32,26 @@ public class TabletComm {
 	
 	Controller con;
 	
-	private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
-	//private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
+	//private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
+	private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
 	private static int port = 38300;
 	private static boolean connected = false;
 	private volatile static Socket socket;
 	public volatile static PrintWriter out;
 	public volatile static Scanner sc;
-
+	
+	private static boolean imgConnected = false;
+	private static int imgPort = 38400;
+	private volatile static Socket imgSocket;
+	private volatile static OutputStream os;
+	private volatile static ObjectOutputStream oos;
+	private volatile static FileInputStream fis;
+	
+	private volatile static BufferedInputStream bis;
+	private static BufferedImage image;
+	private static byte[] myByteArray;
+	
+	
 	
 	/**
 	* <h2>Connection - Default Constructor</h2>
@@ -36,6 +60,20 @@ public class TabletComm {
 	*/
 	public TabletComm (Controller con){
 		this.con = con;	
+		
+		
+        
+        
+        
+		/*
+		try {
+			System.out.println("Making buffered image.");
+			image = ImageIO.read(img);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		*/
 		
 		//Start new thread for tablet communication
 				new Thread( new Runnable() {
@@ -48,6 +86,18 @@ public class TabletComm {
 		            			startScanner();
 		            			sendMsg("I am connected to the laptop!");
 		            			
+		            			if (imgConnect() == true){
+		            				imgConnected = true;
+		            				sendMsg("ImgServer is connected");
+		            				try{
+		            					File img = new File("Kermit2.jpg");
+		            					BufferedImage buffImg = ImageIO.read(img);
+		            					sendImg(buffImg);
+		            				}
+		            				catch (IOException ioe){
+		            					
+		            				}
+		            			}
 		            			//sendMsgTest();
 		            		}
 		         	}
@@ -75,6 +125,7 @@ public class TabletComm {
 			// Forward ports for socket communication
 			con.window.tabletTextArea.append("Running: adb forward tcp:" + port +" tcp:"+ port +" \n\n");
 			runConsoleCommand(adbLocation + " forward tcp:38300 tcp:38300");
+			runConsoleCommand(adbLocation + " forward tcp:38400 tcp:38400");
 				 
 			//kill app if already running
 			runConsoleCommand(adbLocation + " shell am force-stop com.example.airg.adbtest");
@@ -135,6 +186,50 @@ public class TabletComm {
         return false;
 	}
 	
+	/**<h2>imgConnect</h2>
+	   * This method creates the socket connection and 
+	   * sets up the input and output stream.
+	   * 
+	   * @return true - Connection successful
+	   * 
+	   * @return false - Connection failed
+	   */
+	private boolean imgConnect(){
+		  //Create socket connection
+      try{
+      	con.window.tabletTextArea.append("Attempting connection for img socket.....\n");
+          imgSocket = new Socket("localhost", 38400);
+          //os = imgSocket.getOutputStream();
+          //oos = new ObjectOutputStream(os);
+          oos = new ObjectOutputStream(imgSocket.getOutputStream()); 
+          
+          // add a shutdown hook to close the socket if system crashes or exists unexpectedly
+          Thread closeSocketOnShutdown = new Thread() {
+              public void run() {
+                  try {
+                      imgSocket.close();
+                  } catch (IOException e) {
+                      e.printStackTrace();
+                  }
+              }
+          };
+
+          Runtime.getRuntime().addShutdownHook(closeSocketOnShutdown);
+          
+        
+        
+          
+          return true;
+
+      } catch (UnknownHostException e) {
+      	con.window.tabletTextArea.append("imgSocket connection problem (Unknown host)" + e.getStackTrace());
+      } catch (IOException e) {
+      	con.window.tabletTextArea.append("Could not initialize I/O on ImgSocket " + e.getStackTrace());
+      } 
+      
+      return false;
+	}
+	
 	/**<h2>startScanner</h2>
 	 * This method starts a scanner in a new thread to receive
 	 * messages from the tablet app.
@@ -179,6 +274,13 @@ public class TabletComm {
 	     scannerIn.close();
 	}
 	
+	public void logInfo (String msg){
+		msg = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+				DateFormat.MEDIUM).format(System.currentTimeMillis()) + msg +"\n";
+		con.window.tabletTextArea.append(msg);
+	}
+	
+	
 	/**<h2>sendMsg</h2>
 	   * This method sends a specified string to the tablet
 	   * 
@@ -191,6 +293,35 @@ public class TabletComm {
 			msg = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
 					DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Sent: " + msg +"\n";
 			con.window.tabletTextArea.append(msg);
+		}
+		else
+		{
+			con.window.tabletTextArea.append("Tablet not connected.\n");
+		}
+		
+	}
+	
+	/**<h2>sendImg</h2>
+	   * This method sends a specified string to the tablet
+	   * 
+	   * @param msg - message you want to send
+	 * @throws IOException 
+	   */
+	public void sendImg (BufferedImage img) throws IOException{
+	
+		if (imgConnected == true){
+			File outputfile = new File("image.jpg");
+			ImageIO.write(img, "jpg", outputfile);
+			myByteArray  = new byte [(int)outputfile.length()];
+			fis = new FileInputStream(outputfile);
+			bis = new BufferedInputStream(fis);
+	        bis.read(myByteArray,0,myByteArray.length);
+	            
+	        oos = new ObjectOutputStream(imgSocket.getOutputStream()); 	        	
+	        logInfo("Sending image to tablet.");
+	        oos.writeObject(myByteArray);
+	        oos.flush();
+			
 		}
 		else
 		{

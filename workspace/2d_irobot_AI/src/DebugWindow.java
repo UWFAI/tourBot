@@ -14,6 +14,7 @@ import java.awt.SystemColor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
@@ -44,6 +45,7 @@ import javax.swing.JTextField;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.SpringLayout;
+import javax.imageio.ImageIO;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -585,7 +587,7 @@ public class DebugWindow extends JFrame {
 		panel_Tablet.setLayout(null);
 		
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(6, 6, 480, 461);
+		scrollPane_1.setBounds(6, 6, 480, 421);
 		panel_Tablet.add(scrollPane_1);
 		
 		tabletTextArea = new JTextArea();
@@ -611,8 +613,44 @@ public class DebugWindow extends JFrame {
 				}
 			}
 		});
+		
 		btn_tabletSend.setBounds(369, 481, 117, 29);
 		panel_Tablet.add(btn_tabletSend);
+		
+		JButton btn_send_cookie = new JButton("Send Cookie");
+		btn_send_cookie.setBounds(44, 439, 117, 29);
+		panel_Tablet.add(btn_send_cookie);
+		
+		btn_send_cookie.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try{
+					File img = new File("Cookie.jpg");
+					BufferedImage buffImg = ImageIO.read(img);
+					con.tab.sendImg(buffImg);
+				}
+				catch (IOException ioe){
+					
+				}
+			}
+		});
+		
+		JButton btn_send_kermit = new JButton("Send Kermit");
+		btn_send_kermit.setBounds(213, 439, 117, 29);
+		panel_Tablet.add(btn_send_kermit);
+		
+		btn_send_kermit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try{
+					File img = new File("Kermit.jpg");
+					BufferedImage buffImg = ImageIO.read(img);
+					con.tab.sendImg(buffImg);
+				}
+				catch (IOException ioe){
+					
+				}
+			}
+		});
+		
 		
 		//////////////////////////////////////////////////////////////////////////////////
 		setVisible(true);
