@@ -30,6 +30,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -61,11 +64,12 @@ public class MyActivity extends AppCompatActivity {
     private Handler mHandler=null;
     private Handler tHandler=null;
     private Handler iHandler=null;
-    ServerSocket server=null;
-    ServerSocket imgServer = null;
+    static volatile ServerSocket server=null;
+    static volatile ServerSocket imgServer = null;
     ObjectInputStream objis;
-    Scanner socketIn;
-    PrintWriter socketOut;
+    BufferedInputStream bis;
+    static volatile Scanner socketIn;
+    static volatile PrintWriter socketOut;
     boolean connected;
     boolean imgConnected;
 
@@ -142,7 +146,7 @@ public class MyActivity extends AppCompatActivity {
             socketOut = new PrintWriter(client.getOutputStream(), true);
         } catch (SocketTimeoutException e) {
             // print out TIMEOUT
-            connectionStatus="Connection has timed out! Please try again";
+            connectionStatus="Connection has timed out!";
             Log.w(TAG, connectionStatus);
 
             mHandler.post(showConnectionStatus);
@@ -164,8 +168,8 @@ public class MyActivity extends AppCompatActivity {
         if (client!=null) {
             connected=true;
             // print out success
-            socketOut.println("I'm connected!");
-            socketOut.println("Wooooooo!");
+            socketOut.println("Connection was succesful!");
+
             connectionStatus="Connection was succesful!";
             Log.w(TAG, connectionStatus);
 
@@ -173,9 +177,13 @@ public class MyActivity extends AppCompatActivity {
             mHandler.post(new Runnable() {
                 public void run() {
                     Toast.makeText(MyActivity.this, connectionStatus, Toast.LENGTH_LONG).show();
-                    tv.setText("Connected!");
+                    findViewById(R.id.loadingPanel).setVisibility(View.GONE);
+                    tv.setVisibility(View.VISIBLE);
+                    //tv.setText("Connected!\n");
                     btn.setVisibility(View.VISIBLE);
                     edt.setVisibility(View.VISIBLE);
+                    imgV.setVisibility(View.VISIBLE);
+
                 }
             });
 
@@ -189,6 +197,8 @@ public class MyActivity extends AppCompatActivity {
         Socket client=null;
         // initialize server socket
 
+        DataInputStream data = null;
+
         try{
             imgServer = new ServerSocket(38400);
             imgServer.setSoTimeout(TIMEOUT * 1000);//attempt to accept a connection
@@ -196,11 +206,15 @@ public class MyActivity extends AppCompatActivity {
             client = imgServer.accept();
             //is = client.getInputStream();
 
-            objis = new ObjectInputStream(client.getInputStream());
+            //objis = new ObjectInputStream(client.getInputStream());
+            // Read image data
+            //data = new DataInputStream(new BufferedInputStream(client.getInputStream()));
+            //bis = new BufferedInputStream(client.getInputStream());
 
         } catch (SocketTimeoutException e) {
             // print out TIMEOUT
-            connectionStatus="imgServer Connection has timed out! Please try again";
+            connectionStatus="imgServer Connection has timed out! ";
+
             Log.w(TAG, connectionStatus);
 
             mHandler.post(showConnectionStatus);
@@ -228,34 +242,70 @@ public class MyActivity extends AppCompatActivity {
             byte[] bytes;
 
                 int count = 0;
-                while (count < 30) {
+                while (count < 10) {
                     try {
+                        //Log.w(TAG, "Starting image loop");
+                    // Read image data
+                     data = new DataInputStream(client.getInputStream());
+                    int w = data.readInt();
 
-                        bytes = (byte[]) objis.readObject();
+                        //Log.w(TAG, "Image width is "+ Integer.toString(w));
+                    int h = data.readInt();
+                        //Log.w(TAG, "Image height is "+ Integer.toString(h));
+
+                    byte[] imgBytes = new byte[ h * w * 4 ]; // 4 byte ABGR
+                        //Log.w(TAG, Integer.toString(imgBytes.length)+ " bytes allocated for byte array");
+
+                    data.readFully(imgBytes);
 
 
-                        if (bytes != null) {
+                        //Log.w(TAG, "data read to imgBytes array");
 
-                            image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                    // Convert 4 byte interleaved ABGR to int packed ARGB
+                    int[] pixels = new int[w * h];
+                    for (int i = 0; i < pixels.length; i++) {
+                        int byteIndex = i * 4;
+                        pixels[i] =
+                                ((imgBytes[byteIndex    ] & 0xFF) << 24)
+                                        | ((imgBytes[byteIndex + 3] & 0xFF) << 16)
+                                        | ((imgBytes[byteIndex + 2] & 0xFF) <<  8)
+                                        |  (imgBytes[byteIndex + 1] & 0xFF);
+                    }
+                        //Log.w(TAG, "Creating bitmap");
+                    // Finally, create bitmap from packed int ARGB, using ARGB_8888
+                    image = Bitmap.createBitmap(pixels, w, h, Bitmap.Config.ARGB_8888);
+                        //Log.w(TAG, "Bitmap created");
 
-                            iHandler.post(new Runnable() {
+                        //bytes = (byte[]) objis.readObject();
+
+                            //image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+                            tHandler.post(new Runnable() {
                                 public void run() {
                                     if (image == null) {
-                                        Toast.makeText(MyActivity.this, "Image is null :(", Toast.LENGTH_LONG).show();
+                                        //Toast.makeText(MyActivity.this, "Image is null :(", Toast.LENGTH_LONG).show();
+                                        //Log.w(TAG, "Image is null");
                                     } else {
                                         imgV.setImageBitmap(image);
                                         socketOut.println("Image Recieved");
                                     }
                                 }
                             });
-                        }
 
-                        //count ++;
-                    } catch (Exception e) {
+
+
+                    } catch (IOException ioe) {
+                        // TODO Auto-generated catch block
+                        //ioe.printStackTrace();
+                        //Log.w(TAG, "Image didnt work. (IOException)");
+                    }
+                    catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
-                        Log.w(TAG, "Image didnt work.");
+                        Log.w(TAG, "Image didnt work. ??");
                     }
+
+                    //count ++;
                 }
 
 
@@ -282,8 +332,8 @@ public class MyActivity extends AppCompatActivity {
             msg = socketIn.nextLine();
             tHandler.post(new Runnable() {
                 public void run() {
-                    tv.setText(DateFormat.getDateTimeInstance(DateFormat.SHORT,
-                            DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Recieved: " + msg);
+                    tv.append(DateFormat.getDateTimeInstance(DateFormat.SHORT,
+                            DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Recieved: " + msg + "\n");
                 }
             });
         }

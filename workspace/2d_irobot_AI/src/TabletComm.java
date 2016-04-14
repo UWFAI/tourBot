@@ -1,7 +1,9 @@
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -61,19 +63,7 @@ public class TabletComm {
 	public TabletComm (Controller con){
 		this.con = con;	
 		
-		
-        
-        
-        
-		/*
-		try {
-			System.out.println("Making buffered image.");
-			image = ImageIO.read(img);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		*/
+
 		
 		//Start new thread for tablet communication
 				new Thread( new Runnable() {
@@ -88,17 +78,21 @@ public class TabletComm {
 		            			
 		            			if (imgConnect() == true){
 		            				imgConnected = true;
-		            				sendMsg("ImgServer is connected");
+		            				//sendMsg("ImgServer is connected");
+		            				
+		            				//try sending a kermit
 		            				try{
+		            					
 		            					File img = new File("Kermit2.jpg");
 		            					BufferedImage buffImg = ImageIO.read(img);
+		            							
 		            					sendImg(buffImg);
 		            				}
-		            				catch (IOException ioe){
+		            				catch (Exception e){
 		            					
 		            				}
 		            			}
-		            			//sendMsgTest();
+		            			
 		            		}
 		         	}
 				}).start();
@@ -199,10 +193,7 @@ public class TabletComm {
       try{
       	con.window.tabletTextArea.append("Attempting connection for img socket.....\n");
           imgSocket = new Socket("localhost", 38400);
-          //os = imgSocket.getOutputStream();
-          //oos = new ObjectOutputStream(os);
-          oos = new ObjectOutputStream(imgSocket.getOutputStream()); 
-          
+         
           // add a shutdown hook to close the socket if system crashes or exists unexpectedly
           Thread closeSocketOnShutdown = new Thread() {
               public void run() {
@@ -216,9 +207,7 @@ public class TabletComm {
 
           Runtime.getRuntime().addShutdownHook(closeSocketOnShutdown);
           
-        
-        
-          
+
           return true;
 
       } catch (UnknownHostException e) {
@@ -276,7 +265,7 @@ public class TabletComm {
 	
 	public void logInfo (String msg){
 		msg = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
-				DateFormat.MEDIUM).format(System.currentTimeMillis()) + msg +"\n";
+				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " " + msg +"\n";
 		con.window.tabletTextArea.append(msg);
 	}
 	
@@ -307,9 +296,11 @@ public class TabletComm {
 	   * @param msg - message you want to send
 	 * @throws IOException 
 	   */
-	public void sendImg (BufferedImage img) throws IOException{
+	public void sendImg (BufferedImage img){
 	
 		if (imgConnected == true){
+			try{
+			/*
 			File outputfile = new File("image.jpg");
 			ImageIO.write(img, "jpg", outputfile);
 			myByteArray  = new byte [(int)outputfile.length()];
@@ -321,7 +312,34 @@ public class TabletComm {
 	        logInfo("Sending image to tablet.");
 	        oos.writeObject(myByteArray);
 	        oos.flush();
+	        */
+				logInfo("Sending image to tablet.");
+				
+				BufferedImage convertedImg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
+			    convertedImg.getGraphics().drawImage(img, 0, 0, null);
+			    convertedImg.getGraphics().dispose();
+	        
+	        byte[] imgBytes = ((DataBufferByte) convertedImg.getData().getDataBuffer()).getData();
+
+	        // Using DataOutputStream for simplicity
+	        DataOutputStream data = new DataOutputStream(new BufferedOutputStream(imgSocket.getOutputStream()));
+	        
+	        
+	        //logInfo( "Width of image is " + Integer.toString(convertedImg.getWidth()) );
+	        //logInfo( "Height of image is " + Integer.toString(convertedImg.getHeight()) );
+	        //logInfo( "size of byte array is " + Integer.toString(imgBytes.length) );
+	        
+	        data.writeInt(convertedImg.getWidth());
+	        data.writeInt(convertedImg.getHeight());
+	       
+	        data.write(imgBytes);
+
+	        data.flush();
 			
+	        //logInfo("Image sent and data output stream flused");
+			} catch (IOException e){
+				logInfo("IOException occured :(");
+			}
 		}
 		else
 		{
