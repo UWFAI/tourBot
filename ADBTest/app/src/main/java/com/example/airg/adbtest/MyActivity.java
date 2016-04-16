@@ -14,9 +14,12 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import android.app.Activity;
@@ -54,12 +57,17 @@ public class MyActivity extends AppCompatActivity {
     public static final String TAG = "Connection";
     public static final int TIMEOUT=10;
     private static Bitmap image;
+    private static int height;
+    private static int width;
     String msg = "";
     Intent i=null;
     TextView tv=null;
     Button btn= null;
     EditText edt= null;
     ImageView imgV = null;
+    Button vk = null;
+    Button vm = null;
+    FrameLayout fl = null;
     private String connectionStatus=null;
     private Handler mHandler=null;
     private Handler tHandler=null;
@@ -90,6 +98,9 @@ public class MyActivity extends AppCompatActivity {
         btn = (Button) findViewById(R.id.sendBtn);
         edt = (EditText) findViewById(R.id.editText);
         imgV = (ImageView) findViewById(R.id.imageView);
+        vm = (Button) findViewById(R.id.button_view_messaging);
+        vk = (Button) findViewById(R.id.button_view_kinect);
+        fl = (FrameLayout) findViewById(R.id.MessagingFrame);
         //initialize server socket in a new separate thread
 
         String msg="Attempting to connect…";
@@ -178,10 +189,8 @@ public class MyActivity extends AppCompatActivity {
                 public void run() {
                     Toast.makeText(MyActivity.this, connectionStatus, Toast.LENGTH_LONG).show();
                     findViewById(R.id.loadingPanel).setVisibility(View.GONE);
-                    tv.setVisibility(View.VISIBLE);
-                    //tv.setText("Connected!\n");
-                    btn.setVisibility(View.VISIBLE);
-                    edt.setVisibility(View.VISIBLE);
+                    vk.setVisibility(View.VISIBLE);
+                    vm.setVisibility(View.VISIBLE);
                     imgV.setVisibility(View.VISIBLE);
 
                 }
@@ -244,16 +253,20 @@ public class MyActivity extends AppCompatActivity {
                 int count = 0;
                 while (count < 10) {
                     try {
+
+                        objis = new ObjectInputStream(client.getInputStream());
+
+                        /*
                         //Log.w(TAG, "Starting image loop");
                     // Read image data
                      data = new DataInputStream(client.getInputStream());
-                    int w = data.readInt();
+                    width = data.readInt();
 
                         //Log.w(TAG, "Image width is "+ Integer.toString(w));
-                    int h = data.readInt();
+                    height = data.readInt();
                         //Log.w(TAG, "Image height is "+ Integer.toString(h));
 
-                    byte[] imgBytes = new byte[ h * w * 4 ]; // 4 byte ABGR
+                    byte[] imgBytes = new byte[ height * width * 4 ]; // 4 byte ABGR
                         //Log.w(TAG, Integer.toString(imgBytes.length)+ " bytes allocated for byte array");
 
                     data.readFully(imgBytes);
@@ -262,7 +275,7 @@ public class MyActivity extends AppCompatActivity {
                         //Log.w(TAG, "data read to imgBytes array");
 
                     // Convert 4 byte interleaved ABGR to int packed ARGB
-                    int[] pixels = new int[w * h];
+                    int[] pixels = new int[width * height];
                     for (int i = 0; i < pixels.length; i++) {
                         int byteIndex = i * 4;
                         pixels[i] =
@@ -271,14 +284,15 @@ public class MyActivity extends AppCompatActivity {
                                         | ((imgBytes[byteIndex + 2] & 0xFF) <<  8)
                                         |  (imgBytes[byteIndex + 1] & 0xFF);
                     }
+                    */
                         //Log.w(TAG, "Creating bitmap");
                     // Finally, create bitmap from packed int ARGB, using ARGB_8888
-                    image = Bitmap.createBitmap(pixels, w, h, Bitmap.Config.ARGB_8888);
+                    //image = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888);
                         //Log.w(TAG, "Bitmap created");
 
-                        //bytes = (byte[]) objis.readObject();
+                        bytes = (byte[]) objis.readObject();
 
-                            //image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                            image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
                             tHandler.post(new Runnable() {
                                 public void run() {
@@ -287,7 +301,8 @@ public class MyActivity extends AppCompatActivity {
                                         //Log.w(TAG, "Image is null");
                                     } else {
                                         imgV.setImageBitmap(image);
-                                        socketOut.println("Image Recieved");
+
+                                        socketOut.println("#!#");
                                     }
                                 }
                             });
@@ -344,7 +359,27 @@ public class MyActivity extends AppCompatActivity {
     /** Called when the user clicks the Send button */
     public void sendMessage(View view) {
         // Do something in response to button
-        socketOut.println(edt.getText());
+        String text = edt.getText().toString();
+
+        socketOut.println(text);
+        tv.append(DateFormat.getDateTimeInstance(DateFormat.SHORT,
+                DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Sent: " + text + "\n");
         edt.setText("");
     }
+
+
+    public void viewMessage(View view){
+        fl.setVisibility(View.VISIBLE);
+        imgV.setVisibility(View.GONE);
+    }
+
+    public void viewKinect(View view){
+        fl.setVisibility(View.GONE);
+        imgV.setVisibility(View.VISIBLE);
+
+
+    }
+
+
+
 }
