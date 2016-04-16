@@ -8,6 +8,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import javax.swing.SwingConstants;
 import java.awt.SystemColor;
@@ -52,6 +53,7 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import java.awt.Cursor;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.BorderLayout;
 
 @SuppressWarnings("serial")
 public class DebugWindow extends JFrame {
@@ -69,10 +71,28 @@ public class DebugWindow extends JFrame {
 	public JTabbedPane tabbedPane_inputHelper;
 	public JTextArea txtrInputCommandInfo;
 	public TreePanel panel_tree;
+	public KinectPanel panel_kinect;
+	JScrollPane scrollPane_1;
+	public JSlider slider;
+	public JLabel lblNewLabel;
 	
 	// Watched Variables getters and setters
 	public int get_speed(){ return speed_slider.getValue(); }
-	public int get_direction(){ return direction_slider.getValue()*-1; }
+	public int get_direction(){ 
+		int val = direction_slider.getValue()*-1;
+		
+		if (val > 3) {
+			val = 100 - val;
+		} else
+		
+		if (val < -3) {
+			val = -100 - val;
+		} else {
+			val = 0;
+		}
+		
+		return val; 
+	}
 	
 	public void set_speed(int speed){ 			  table_model.setValueAt(speed, 0, 1); }
 	public void set_angle(int angle){ 			  table_model.setValueAt(angle, 1, 1); }
@@ -100,13 +120,48 @@ public class DebugWindow extends JFrame {
 	
 	Random r = new Random();
 	public JLabel label_spDir_sent;
+	public JScrollPane scrollPane_Tree;
 	private JTextField msgTextField;
 	public JTextArea tabletTextArea;
+	public volatile BufferedImage tab_image = null;
+	public volatile BufferedImage kinect_image = null;
+	public volatile BufferedImage main_kinect_image = null;
+	public volatile int kinect_image_drawn = 0;
+	public volatile boolean clear = true;
 	
 	@SuppressWarnings("static-access")
 	private void thread_run() {
+		/////
 		
+		try {
+			// update kinect image
+			int kinect_width = con.kinect.getDepthWidth();
+			int kinect_height = con.kinect.getDepthHeight();
 
+			if (con.kinect.updated){
+				
+				kinect_image = new BufferedImage(kinect_width*2, kinect_height*2, BufferedImage.TYPE_INT_RGB);
+				Graphics2D bg2 = (Graphics2D) kinect_image.getGraphics();
+				
+				con.kinect.draw_depthImage(bg2, kinect_width, kinect_height);
+				
+				bg2.setColor(Color.WHITE);
+				con.kinect.draw_skeletons(bg2, (int)(kinect_width*2), kinect_height*2);
+			
+				con.tab.sendImg(kinect_image);
+				con.kinect.updated = false;
+				
+				clear = false;
+				main_kinect_image = new BufferedImage(kinect_width*2, kinect_height*2, BufferedImage.TYPE_INT_RGB);
+				bg2 = (Graphics2D) main_kinect_image.getGraphics();
+				bg2.drawImage(kinect_image, 0, 0, null);
+				clear = true;
+			}
+			
+			
+			
+		}catch(NullPointerException e){}
+		
 		/////
 		if (panel_mouse_move_down && panel_mouse_move_event != null) {
 			int button = panel_mouse_move_event.getButton();
@@ -570,7 +625,7 @@ public class DebugWindow extends JFrame {
 
 		//////////////////////////////////////////////////////////////////////////////////
 		// tree tab
-		JScrollPane scrollPane_Tree = new JScrollPane();
+		scrollPane_Tree = new JScrollPane();
 		scrollPane_Tree.setAutoscrolls(true);
 		tabbedPane.addTab("Tree", null, scrollPane_Tree, null);
 		
@@ -578,10 +633,57 @@ public class DebugWindow extends JFrame {
 		panel_tree.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 		panel_tree.setBackground(Color.WHITE);
 		scrollPane_Tree.setViewportView(panel_tree);
-		
+
+		//////////////////
 		JPanel panel_Kinect = new JPanel();
 		tabbedPane.addTab("Kinect", null, panel_Kinect, null);
 		
+		JPanel panel_3 = new JPanel();
+		
+		scrollPane_1 = new JScrollPane();
+		scrollPane_1.setAutoscrolls(true);
+		
+		panel_kinect = new KinectPanel();
+		//JPanel panel_kinect = new JPanel();
+		scrollPane_1.setViewportView(panel_kinect);
+		GroupLayout gl_panel_Kinect = new GroupLayout(panel_Kinect);
+		gl_panel_Kinect.setHorizontalGroup(
+			gl_panel_Kinect.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_Kinect.createSequentialGroup()
+					.addGroup(gl_panel_Kinect.createParallelGroup(Alignment.TRAILING)
+						.addComponent(scrollPane_1, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE)
+						.addComponent(panel_3, Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 490, GroupLayout.PREFERRED_SIZE))
+					.addGap(0))
+		);
+		gl_panel_Kinect.setVerticalGroup(
+			gl_panel_Kinect.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_Kinect.createSequentialGroup()
+					.addComponent(panel_3, GroupLayout.PREFERRED_SIZE, 91, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(scrollPane_1, GroupLayout.DEFAULT_SIZE, 409, Short.MAX_VALUE))
+		);
+		
+		lblNewLabel = new JLabel("New label");
+		
+		slider = new JSlider();
+		slider.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				lblNewLabel.setText(""+slider.getValue());
+			}
+		});
+		slider.setValue(0);
+		slider.setMaximum(360);
+		slider.setMajorTickSpacing(10);
+		slider.setMinorTickSpacing(1);
+		slider.setSnapToTicks(true);
+		slider.setPaintTicks(true);
+		slider.setSize(360, 50);
+		panel_3.add(slider);
+		
+		panel_3.add(lblNewLabel);
+		panel_Kinect.setLayout(gl_panel_Kinect);
+		
+
 		JPanel panel_Tablet = new JPanel();
 		tabbedPane.addTab("Tablet", null, panel_Tablet, null);
 		panel_Tablet.setLayout(null);
@@ -686,6 +788,11 @@ public class DebugWindow extends JFrame {
 		return "";
 	}
 
+	public void set_kinectView(BufferedImage img){
+		panel_kinect.img = img;
+		panel_kinect.repaint();
+	}
+	
 	private class MousePanel extends JPanel {
 		
 		int point_x = 0;
@@ -732,6 +839,38 @@ public class DebugWindow extends JFrame {
 			
 			if (painter != null) {
 				painter.paint(g);
+			}
+		}
+	}
+
+
+	class KinectPanel extends JPanel {
+		
+		BufferedImage img = null;
+		public int width = 640;
+		public int height = 480;
+		
+		public KinectPanel(){
+			super();
+		}
+		
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			Graphics2D g2 = (Graphics2D) g;
+
+			if (img != null){
+				con.kinect.viewer_width = con.kinect.getDepthWidth();
+				con.kinect.viewer_height = con.kinect.getDepthHeight();
+				width = con.kinect.getDepthWidth();
+				height = con.kinect.getDepthHeight();
+				
+				if (clear){
+					g2.drawImage(main_kinect_image, 0, 0, null);
+					g2.dispose();
+				}
+				
+				this.setPreferredSize(new Dimension(width, height));
+				this.revalidate();
 			}
 		}
 	}

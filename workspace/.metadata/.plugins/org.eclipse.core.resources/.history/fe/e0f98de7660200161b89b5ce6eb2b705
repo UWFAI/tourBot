@@ -1,0 +1,414 @@
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.text.DateFormat;
+import java.util.Scanner;
+
+import javax.imageio.ImageIO;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+
+/**
+* <h1>Tablet Communication</h1>
+* The Connection class starts the tour bot's 
+* tablet application and establishes a socket 
+* connection for two way communication. 
+* 
+* @author AIRG
+* @version 1.0.0.1
+*/
+public class TabletComm {
+	
+	Controller con;
+	
+	//private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
+	private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
+	private static int port = 38300;
+	private static boolean connected = false;
+	private volatile static Socket socket;
+	public volatile static PrintWriter out;
+	public volatile static Scanner sc;
+	
+	private static boolean imgConnected = false;
+	private static int imgPort = 38400;
+	private volatile static Socket imgSocket;
+	private volatile static OutputStream os;
+	private volatile static ObjectOutputStream oos;
+	private volatile static FileInputStream fis;
+	
+	private volatile static BufferedInputStream bis;
+	private static BufferedImage image;
+	private static byte[] myByteArray;
+	
+	
+	
+	/**
+	* <h2>Connection - Default Constructor</h2>
+	* The Connection class constructor
+	* 
+	*/
+	public TabletComm (Controller con){
+		this.con = con;	
+		
+
+		
+		//Start new thread for tablet communication
+				new Thread( new Runnable() {
+		            public void run() {
+		            	
+		            		runADB();	
+		            		
+		            		if (connect() == true){
+		            			connected = true;
+		            			startScanner();
+		            			sendMsg("I am connected to the laptop!");
+		            			
+		            			if (imgConnect() == true){
+		            				imgConnected = true;
+		            				//sendMsg("ImgServer is connected");
+		            				
+		            				//try sending a kermit
+		            				try{
+		            					
+		            					File img = new File("Kermit2.jpg");
+		            					BufferedImage buffImg = ImageIO.read(img);
+		            							
+		            					sendImg(buffImg);
+		            				}
+		            				catch (Exception e){
+		            					
+		            				}
+		            			}
+		            			
+		            		}
+		         	}
+				}).start();
+	}
+	
+	
+	/**<h2>runADB</h2>
+	   * This method starts Android Debug Bridge,
+	   * sets ports to forward to, closes any 
+	   * instances of the tablet app currently running, 
+	   * then restarts the tablet app.
+	   * 
+	   * @return Nothing.
+	   */
+	private void runADB(){
+		try {
+			// run the adb bridge
+			con.window.tabletTextArea.append("Attempting to run Android Debug Bridge.....\n\n");
+			runConsoleCommand(adbLocation + " devices");
+			
+			//Wait 4 seconds so adb can start up if it needs to.	
+			printWaitingDots("Starting ADB and checking for device.", 4);
+	
+			// Forward ports for socket communication
+			con.window.tabletTextArea.append("Running: adb forward tcp:" + port +" tcp:"+ port +" \n\n");
+			runConsoleCommand(adbLocation + " forward tcp:38300 tcp:38300");
+			runConsoleCommand(adbLocation + " forward tcp:38400 tcp:38400");
+				 
+			//kill app if already running
+			runConsoleCommand(adbLocation + " shell am force-stop com.example.airg.adbtest");
+			
+			// Run app on device 
+			runConsoleCommand(adbLocation + " shell am start -n com.example.airg.adbtest/com.example.airg.adbtest.MyActivity");
+			
+			//Wait for app to start
+			printWaitingDots("\nWaiting for app to start.", 5);
+			con.window.tabletTextArea.append("\n");
+	
+		}
+	
+		catch (Exception e) {
+			System.out.println(e.toString());
+		}
+		
+	}
+	
+	/**<h2>connect</h2>
+	   * This method creates the socket connection and 
+	   * sets up the input and output stream.
+	   * 
+	   * @return true - Connection successful
+	   * 
+	   * @return false - Connection failed
+	   */
+	private boolean connect(){
+		  //Create socket connection
+        try{
+        	con.window.tabletTextArea.append("Attempting socket connection.....\n");
+            socket = new Socket("localhost", 38300);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            sc = new Scanner(socket.getInputStream());
+
+            
+            // add a shutdown hook to close the socket if system crashes or exists unexpectedly
+            Thread closeSocketOnShutdown = new Thread() {
+                public void run() {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+
+            Runtime.getRuntime().addShutdownHook(closeSocketOnShutdown);
+            
+            return true;
+
+        } catch (UnknownHostException e) {
+        	con.window.tabletTextArea.append("Socket connection problem (Unknown host)" + e.getStackTrace());
+        } catch (IOException e) {
+        	con.window.tabletTextArea.append("Could not initialize I/O on socket " + e.getStackTrace());
+        } 
+        
+        return false;
+	}
+	
+	/**<h2>imgConnect</h2>
+	   * This method creates the socket connection and 
+	   * sets up the input and output stream.
+	   * 
+	   * @return true - Connection successful
+	   * 
+	   * @return false - Connection failed
+	   */
+	private boolean imgConnect(){
+		  //Create socket connection
+      try{
+      	con.window.tabletTextArea.append("Attempting connection for img socket.....\n");
+          imgSocket = new Socket("localhost", 38400);
+         
+          // add a shutdown hook to close the socket if system crashes or exists unexpectedly
+          Thread closeSocketOnShutdown = new Thread() {
+              public void run() {
+                  try {
+                      imgSocket.close();
+                  } catch (IOException e) {
+                      e.printStackTrace();
+                  }
+              }
+          };
+
+          Runtime.getRuntime().addShutdownHook(closeSocketOnShutdown);
+          
+
+          return true;
+
+      } catch (UnknownHostException e) {
+      	con.window.tabletTextArea.append("imgSocket connection problem (Unknown host)" + e.getStackTrace());
+      } catch (IOException e) {
+      	con.window.tabletTextArea.append("Could not initialize I/O on ImgSocket " + e.getStackTrace());
+      } 
+      
+      return false;
+	}
+	
+	/**<h2>startScanner</h2>
+	 * This method starts a scanner in a new thread to receive
+	 * messages from the tablet app.
+	 * 
+	 * 
+	 */
+	private void startScanner(){
+		
+		new Thread( new Runnable() {
+            public void run() {
+            	String scannerLine = "";
+            	while(sc.hasNext()) {
+            		scannerLine = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+            				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Recieved: " + sc.nextLine() +"\n";
+            		//System.out.println(scannerLine);
+            		con.window.tabletTextArea.append(scannerLine);
+            	}
+            }
+		}).start();	
+		
+	}
+	
+	/**<h2>sendMsgTest</h2>
+	 * This method starts a scanner to read command line
+	 * input and then sends each line input to the tablet.
+	 * 
+	 * 
+	 */
+	private void sendMsgTest(){
+		// create a scanner so we can read the command-line input
+	    Scanner scannerIn = new Scanner(System.in);
+	    
+	    String msg = "";
+	    
+	    while(scannerIn.hasNext()){
+	    	msg = scannerIn.next();
+	    	out.println(msg);
+	    	System.out.println(DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+    				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Sent: " + msg + "\n");
+	    }
+	      
+	     scannerIn.close();
+	}
+	
+	public void logInfo (String msg){
+		msg = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " " + msg +"\n";
+		con.window.tabletTextArea.append(msg);
+	}
+	
+	
+	/**<h2>sendMsg</h2>
+	   * This method sends a specified string to the tablet
+	   * 
+	   * @param msg - message you want to send
+	   */
+	public void sendMsg (String msg){
+		
+		if (connected == true){
+			out.println(msg);
+			msg = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+					DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Sent: " + msg +"\n";
+			con.window.tabletTextArea.append(msg);
+		}
+		else
+		{
+			con.window.tabletTextArea.append("Tablet not connected.\n");
+		}
+		
+	}
+	
+	/**<h2>sendImg</h2>
+	   * This method sends a specified string to the tablet
+	   * 
+	   * @param msg - message you want to send
+	 * @throws IOException 
+	   */
+	public void sendImg (BufferedImage img){
+	
+		if (imgConnected == true){
+			try{
+			/*
+			File outputfile = new File("image.jpg");
+			ImageIO.write(img, "jpg", outputfile);
+			myByteArray  = new byte [(int)outputfile.length()];
+			fis = new FileInputStream(outputfile);
+			bis = new BufferedInputStream(fis);
+	        bis.read(myByteArray,0,myByteArray.length);
+	            
+	        oos = new ObjectOutputStream(imgSocket.getOutputStream()); 	        	
+	        logInfo("Sending image to tablet.");
+	        oos.writeObject(myByteArray);
+	        oos.flush();
+	        */
+				logInfo("Sending image to tablet.");
+				
+				BufferedImage convertedImg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
+			    convertedImg.getGraphics().drawImage(img, 0, 0, null);
+			    convertedImg.getGraphics().dispose();
+	        
+	        byte[] imgBytes = ((DataBufferByte) convertedImg.getData().getDataBuffer()).getData();
+
+	        // Using DataOutputStream for simplicity
+	        DataOutputStream data = new DataOutputStream(new BufferedOutputStream(imgSocket.getOutputStream()));
+	        
+	        
+	        //logInfo( "Width of image is " + Integer.toString(convertedImg.getWidth()) );
+	        //logInfo( "Height of image is " + Integer.toString(convertedImg.getHeight()) );
+	        //logInfo( "size of byte array is " + Integer.toString(imgBytes.length) );
+	        
+	        data.writeInt(convertedImg.getWidth());
+	        data.writeInt(convertedImg.getHeight());
+	       
+	        data.write(imgBytes);
+
+	        data.flush();
+			
+	        //logInfo("Image sent and data output stream flused");
+			} catch (IOException e){
+				logInfo("IOException occured :(");
+			}
+		}
+		else
+		{
+			con.window.tabletTextArea.append("Tablet not connected.\n");
+		}
+		
+	}
+	
+	
+	/**<h2>runConsoleCommand</h2>
+	   * This method runs a console command and prints its outputs
+	   * 
+	   * @param cmd - command you want to run
+	   */
+	private void runConsoleCommand(String cmd){
+		
+		//String to save output to
+		String s = null;
+		
+		try{
+			//Set Process
+			Process p = Runtime.getRuntime().exec(cmd);
+		
+			//Run and get output from command
+			BufferedReader stdInput = new BufferedReader(new
+                 InputStreamReader(p.getInputStream()));
+		
+			//Print output from command
+			while ((s = stdInput.readLine()) != null) {
+				con.window.tabletTextArea.append(s + "\n");  
+			} 
+		}
+		catch (Exception e) {
+			con.window.tabletTextArea.append(e.toString() + "\n");
+		}
+		
+	}
+	
+	/**<h2>printWaitingDots</h2>
+	   * This method prints a message then a specified 
+	   * numbers of periods once a second after the message. 
+	   * 
+	   * @param msg - Message to print 
+	   * 
+	   * @param sec - Seconds to wait, also periods to print.
+	   */
+	private void printWaitingDots(String msg, int sec){
+		
+		try{
+			//Print message
+			con.window.tabletTextArea.append(msg);
+			//Print one dot a second until next to last dot
+			for (int i=1; i< sec; i++){
+				Thread.sleep(1000);
+				con.window.tabletTextArea.append(".");
+			}
+			//Wait one second then print last dot and go to new line
+			Thread.sleep(1000);
+			con.window.tabletTextArea.append(".\n\n");
+		}
+		catch (Exception e) {
+			con.window.tabletTextArea.append(e.toString());
+		}
+		
+	}
+	
+	private void getLocation(){
+		sendMsg("");	
+		
+	}
+
+}

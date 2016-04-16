@@ -1,3 +1,4 @@
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.BufferedInputStream;
@@ -11,9 +12,14 @@ import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.text.DateFormat;
+import java.util.Iterator;
 import java.util.Scanner;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,8 +40,8 @@ public class TabletComm {
 	
 	Controller con;
 	
-	//private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
-	private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
+	private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
+	//private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
 	private static int port = 38300;
 	private static boolean connected = false;
 	private volatile static Socket socket;
@@ -53,6 +59,7 @@ public class TabletComm {
 	private static BufferedImage image;
 	private static byte[] myByteArray;
 	
+	private static boolean sendingImg = false;
 	
 	
 	/**
@@ -79,7 +86,7 @@ public class TabletComm {
 		            			if (imgConnect() == true){
 		            				imgConnected = true;
 		            				//sendMsg("ImgServer is connected");
-		            				
+		            				/*
 		            				//try sending a kermit
 		            				try{
 		            					
@@ -91,6 +98,7 @@ public class TabletComm {
 		            				catch (Exception e){
 		            					
 		            				}
+		            				*/
 		            			}
 		            			
 		            		}
@@ -220,25 +228,57 @@ public class TabletComm {
 	}
 	
 	/**<h2>startScanner</h2>
-	 * This method starts a scanner in a new thread to receive
-	 * messages from the tablet app.
-	 * 
-	 * 
-	 */
+
+	* This method starts a scanner in a new thread to receive
+
+	* messages from the tablet app.
+
+	* 
+
+	* 
+
+	*/
+
 	private void startScanner(){
-		
-		new Thread( new Runnable() {
-            public void run() {
-            	String scannerLine = "";
-            	while(sc.hasNext()) {
-            		scannerLine = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
-            				DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Recieved: " + sc.nextLine() +"\n";
-            		//System.out.println(scannerLine);
-            		con.window.tabletTextArea.append(scannerLine);
-            	}
-            }
-		}).start();	
-		
+
+
+	new Thread( new Runnable() {
+
+	            public void run() {
+
+	            String scannerLine = "";
+
+	            String outputText = "";
+
+	            while(sc.hasNext()) {
+
+	            scannerLine = sc.nextLine();
+
+	            if (scannerLine.contains("#!#")){
+
+	            sendingImg = false;
+
+	            }else
+
+	            {
+
+	            outputText = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
+
+	            DateFormat.MEDIUM).format(System.currentTimeMillis()) + " Recieved: " + scannerLine +"\n";
+
+	            //System.out.println(scannerLine);
+
+	            con.window.tabletTextArea.append(scannerLine);
+
+	            }
+
+	            }
+
+	            }
+
+	}).start();
+
+
 	}
 	
 	/**<h2>sendMsgTest</h2>
@@ -296,30 +336,57 @@ public class TabletComm {
 	   * @param msg - message you want to send
 	 * @throws IOException 
 	   */
-	public void sendImg (BufferedImage img){
-	
-		if (imgConnected == true){
+	public void sendImg (final BufferedImage img){
+
+		new Thread( new Runnable() {
+            public void run() {
+		if (imgConnected == true && sendingImg == false){
 			try{
-			/*
+				sendingImg = true;
+				
+			
+				BufferedImage tab_image = new BufferedImage(320, 240, BufferedImage.TYPE_INT_RGB);
+				Graphics2D tg2 = (Graphics2D) tab_image.getGraphics();
+				tg2.drawImage(img, 0, 0, tab_image.getWidth(), tab_image.getHeight(), null);
+				tg2.dispose();
+				
 			File outputfile = new File("image.jpg");
-			ImageIO.write(img, "jpg", outputfile);
+			ImageIO.write(tab_image, "jpg", outputfile);
+			
+			
+			/*
+            ImageOutputStream out = ImageIO.createImageOutputStream(outputfile);
+            Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("jpeg");
+            ImageWriter writer = iter.next();
+            ImageWriteParam iwp = writer.getDefaultWriteParam();
+            iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            iwp.setCompressionQuality(0.7f);
+            writer.setOutput(out);
+            writer.write(null, new IIOImage(img ,null,null),iwp);
+            writer.dispose();
+			*/
+            
 			myByteArray  = new byte [(int)outputfile.length()];
 			fis = new FileInputStream(outputfile);
 			bis = new BufferedInputStream(fis);
 	        bis.read(myByteArray,0,myByteArray.length);
 	            
 	        oos = new ObjectOutputStream(imgSocket.getOutputStream()); 	        	
-	        logInfo("Sending image to tablet.");
+	        //logInfo("Sending image to tablet.");
 	        oos.writeObject(myByteArray);
 	        oos.flush();
-	        */
-				logInfo("Sending image to tablet.");
-				
-				BufferedImage convertedImg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
-			    convertedImg.getGraphics().drawImage(img, 0, 0, null);
-			    convertedImg.getGraphics().dispose();
 	        
-	        byte[] imgBytes = ((DataBufferByte) convertedImg.getData().getDataBuffer()).getData();
+			//logInfo("Sending image to tablet.");
+				
+			/*
+				
+				//BufferedImage convertedImg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
+			    //convertedImg.getGraphics().drawImage(img, 0, 0, null);
+			   // convertedImg.getGraphics().dispose();
+	        
+	        byte[] imgBytes = ((DataBufferByte) img.getData().getDataBuffer()).getData();
+	        
+	       // byte[] imgBytes = ((DataBufferByte) img.getData().getDataBuffer()).getData();
 
 	        // Using DataOutputStream for simplicity
 	        DataOutputStream data = new DataOutputStream(new BufferedOutputStream(imgSocket.getOutputStream()));
@@ -329,12 +396,15 @@ public class TabletComm {
 	        //logInfo( "Height of image is " + Integer.toString(convertedImg.getHeight()) );
 	        //logInfo( "size of byte array is " + Integer.toString(imgBytes.length) );
 	        
-	        data.writeInt(convertedImg.getWidth());
-	        data.writeInt(convertedImg.getHeight());
+	        data.writeInt(img.getWidth());
+	        data.writeInt(img.getHeight());
 	       
 	        data.write(imgBytes);
 
 	        data.flush();
+	        
+	        */
+	        //sendingImg = false;
 			
 	        //logInfo("Image sent and data output stream flused");
 			} catch (IOException e){
@@ -343,8 +413,9 @@ public class TabletComm {
 		}
 		else
 		{
-			con.window.tabletTextArea.append("Tablet not connected.\n");
+			//con.window.tabletTextArea.append("Tablet not connected.\n");
 		}
+            }}).start();
 		
 	}
 	

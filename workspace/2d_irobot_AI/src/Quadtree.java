@@ -13,7 +13,7 @@ public class Quadtree {
 	public Node root;
 	
 	// max depth that the tree can be
-	int max_depth = 15;
+	int max_depth = 12;
 	
 	// I was thinking that this has a way of knowing if a place is free, !free, !Checked
 	// if we are to do this we need to send a point every step and not just at the 
@@ -76,6 +76,14 @@ public class Quadtree {
 		if (depth > max_depth) {
 			return true;
 		}
+		
+		/*
+		if (node.UL.state == state && node.UR.state == state && node.DL.state == state && node.DR.state == state){
+			return true;
+		}*/
+		
+		if (node.state == state)
+			return true;
 		
 		if (intersects(cx, cy, cr, node)) {
 			node.split();

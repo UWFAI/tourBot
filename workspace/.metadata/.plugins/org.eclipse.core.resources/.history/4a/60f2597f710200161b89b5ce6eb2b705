@@ -1,0 +1,895 @@
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import java.awt.Color;
+import javax.swing.JTabbedPane;
+import javax.swing.JButton;
+import javax.swing.JScrollPane;
+import javax.swing.JSlider;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+
+import javax.swing.SwingConstants;
+import java.awt.SystemColor;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.Random;
+
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.swing.JLabel;
+import javax.swing.JToggleButton;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
+import net.miginfocom.swing.MigLayout;
+import javax.swing.border.TitledBorder;
+import javax.swing.border.MatteBorder;
+import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.JTextField;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.SpringLayout;
+import javax.imageio.ImageIO;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.LayoutStyle.ComponentPlacement;
+import java.awt.Cursor;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.BorderLayout;
+
+@SuppressWarnings("serial")
+public class DebugWindow extends JFrame {
+
+	private static Controller con;
+	
+	private JPanel contentPane;
+	private JTable table;
+	private DefaultTableModel table_model;
+	private JSlider direction_slider;
+	private JSlider speed_slider;
+	private JTextField textField;
+	private JTextField textField_1;
+	private JTextField textField_2;
+	public JTabbedPane tabbedPane_inputHelper;
+	public JTextArea txtrInputCommandInfo;
+	public TreePanel panel_tree;
+	public KinectPanel panel_kinect;
+	JScrollPane scrollPane_1;
+	public JSlider slider;
+	public JLabel lblNewLabel;
+	
+	// Watched Variables getters and setters
+	public int get_speed(){ return speed_slider.getValue(); }
+	public int get_direction(){ 
+		int val = direction_slider.getValue()*-1;
+		
+		if (val > 3) {
+			val = 100 - val;
+		} else
+		
+		if (val < -3) {
+			val = -100 - val;
+		} else {
+			val = 0;
+		}
+		
+		return val; 
+	}
+	
+	public void set_speed(int speed){ 			  table_model.setValueAt(speed, 0, 1); }
+	public void set_angle(int angle){ 			  table_model.setValueAt(angle, 1, 1); }
+	public void set_distance(int distance){ 	  table_model.setValueAt(distance, 2, 1); }
+	public void set_direction(int direction){ 	  table_model.setValueAt(direction, 3, 1); }
+	public void set_temperature(int temperature){ table_model.setValueAt(temperature, 4, 1); }
+	public void set_bumps(int bumps){	 		  table_model.setValueAt(bumps, 5, 1); }
+	public void set_battery(int battery){ 		  table_model.setValueAt(battery, 6, 1); }
+
+	// mouse panel variables
+	public MousePanel panel_mouse_move;
+	public volatile boolean panel_mouse_move_down = false;
+	public volatile MouseEvent panel_mouse_move_event = null;
+	
+	
+	// the windows main thread stuff
+	private void window_thread_start() {
+		
+		new Thread( new Runnable() {
+	        public void run()  {
+	        	while(true){thread_run();}
+	        }
+		} ).start();
+	}
+	
+	Random r = new Random();
+	public JLabel label_spDir_sent;
+	public JScrollPane scrollPane_Tree;
+	private JTextField msgTextField;
+	public JTextArea tabletTextArea;
+	public BufferedImage tab_image = null;
+	public BufferedImage kinect_image = null;
+	public boolean kinect_image_drawn = false;
+	public boolean kinect_image_got = false;
+	
+	@SuppressWarnings("static-access")
+	private void thread_run() {
+		/////
+		try {
+			// update kinect image
+			int kinect_width = 640;
+			int kinect_height = 480;
+			
+			
+			
+			if (kinect_image == null) 
+				kinect_image = new BufferedImage(kinect_width*2, kinect_height*2, BufferedImage.TYPE_4BYTE_ABGR);
+			//kinect_image = new BufferedImage(kinect_width*2, kinect_height*2, BufferedImage.TYPE_4BYTE_ABGR);
+			
+			
+			
+			Graphics2D bg2 = (Graphics2D) kinect_image.getGraphics();
+			
+			bg2.setColor(Color.black);
+			bg2.fillRect(0, 0, kinect_image.getWidth(), kinect_image.getHeight());
+			
+			con.kinect.draw_depthImage(bg2, kinect_width, kinect_height);
+			
+			bg2.setColor(Color.WHITE);
+			con.kinect.draw_skeletons(bg2, kinect_width*2, kinect_height*2);
+			
+			kinect_image_got = true;
+			
+			
+			
+			// send to the tablet
+			tab_image = new BufferedImage(640, 480, BufferedImage.TYPE_INT_RGB);
+			Graphics2D tg2 = (Graphics2D) tab_image.getGraphics();
+			//tg2.setColor(Color.WHITE);
+			//tg2.fillRect(0, 0, tab_image.getWidth(), tab_image.getHeight());
+			tg2.drawImage(kinect_image, 0, 0, tab_image.getWidth(), tab_image.getHeight(), null);
+			con.tab.sendImg(tab_image);
+			
+			
+			
+			
+		}catch(NullPointerException e){}
+		/////
+		if (panel_mouse_move_down && panel_mouse_move_event != null) {
+			int button = panel_mouse_move_event.getButton();
+			
+			boolean point_changed = false;
+			if (button == panel_mouse_move_event.BUTTON1 || panel_mouse_move_event.getID() == panel_mouse_move_event.MOUSE_DRAGGED){//
+				int mx = panel_mouse_move_event.getX();
+				int my = panel_mouse_move_event.getY();
+				int width = panel_mouse_move.getWidth()-10;
+				int height = panel_mouse_move.getHeight()-10;
+				int slide_x = (int) ((mx-(width/2.0))/((width/2.0)/100.0));
+				int slide_y = (int) ((my-(height/2.0))/((height/2.0)/100.0));
+				
+				speed_slider.setValue(slide_y*-1);
+				direction_slider.setValue(slide_x);
+				
+				panel_mouse_move.set_newPoint(mx-(width/2)-5, my-(height/2)-5);
+				
+				point_changed = true;
+			}
+			if (button == panel_mouse_move_event.BUTTON3) {
+				direction_slider.setValue(0);
+				speed_slider.setValue(0);
+				panel_mouse_move.set_newPoint(0, 0);
+				point_changed = true;
+				
+			}
+			if (point_changed) {
+				panel_mouse_move.repaint();
+			}
+		}
+		
+		
+	}
+	
+	/**
+	 * Create the frame.
+	 */
+	public DebugWindow(final Controller con) {
+		this.con = con;
+		
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+				| UnsupportedLookAndFeelException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		setMinimumSize(new Dimension(730, 600));
+		
+		//////////////////////////////////////////////////////////////////////////////////
+		// set up the JFrame
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 634, 523);
+
+		//////////////////////////////////////////////////////////////////////////////////
+		// set up the main JPanel
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		SpringLayout sl_contentPane = new SpringLayout();
+		contentPane.setLayout(sl_contentPane);
+
+		//////////////////////////////////////////////////////////////////////////////////
+		// Speed / Direction Remote
+		JPanel panel = new JPanel();
+		sl_contentPane.putConstraint(SpringLayout.NORTH, panel, 0, SpringLayout.NORTH, contentPane);
+		sl_contentPane.putConstraint(SpringLayout.WEST, panel, 0, SpringLayout.WEST, contentPane);
+		sl_contentPane.putConstraint(SpringLayout.SOUTH, panel, 200, SpringLayout.NORTH, contentPane);
+		sl_contentPane.putConstraint(SpringLayout.EAST, panel, 200, SpringLayout.WEST, contentPane);
+		panel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Speed / Direction Remote", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		panel.setBackground(SystemColor.menu);
+		contentPane.add(panel);
+		
+		panel_mouse_move = new MousePanel();
+		panel_mouse_move.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+		panel_mouse_move.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent evt)  {panel_mouse_move_down = true; panel_mouse_move_event = evt;}
+            public void mouseReleased(MouseEvent evt) {panel_mouse_move_down = false;}
+            //public void mouseExited(MouseEvent evt)   {panel_mouse_move_down = false;}
+		});
+		panel_mouse_move.addMouseMotionListener(new MouseMotionListener() {
+			@Override
+			public void mouseMoved(MouseEvent evt) {}
+			
+			@Override
+			public void mouseDragged(MouseEvent evt) { if (panel_mouse_move_down) { panel_mouse_move_event = evt; } }
+			
+		});
+		
+		panel.setLayout(new MigLayout("", "[][188px]", "[54px][54px][59px]"));
+		panel_mouse_move.setBackground(Color.WHITE);
+		panel.add(panel_mouse_move, "cell 1 0 1 2,grow");
+		
+		speed_slider = new JSlider();
+		speed_slider.setPaintTicks(true);
+		panel.add(speed_slider, "cell 0 0 1 2,grow");
+		speed_slider.setSize(new Dimension(50, 50));
+		speed_slider.setMinorTickSpacing(10);
+		speed_slider.setMajorTickSpacing(50);
+		speed_slider.setValue(0);
+		speed_slider.setMinimum(-100);
+		speed_slider.setOrientation(SwingConstants.VERTICAL);
+		
+		direction_slider = new JSlider();
+		direction_slider.setPaintTicks(true);
+		direction_slider.setPaintTrack(false);
+		direction_slider.setSize(new Dimension(50, 50));
+		direction_slider.setMinorTickSpacing(10);
+		direction_slider.setMajorTickSpacing(50);
+		direction_slider.setValue(0);
+		direction_slider.setMinimum(-100);
+		panel.add(direction_slider, "cell 1 2,grow");
+		
+		label_spDir_sent = new JLabel("000");
+		sl_contentPane.putConstraint(SpringLayout.NORTH, label_spDir_sent, 6, SpringLayout.SOUTH, panel);
+		sl_contentPane.putConstraint(SpringLayout.WEST, label_spDir_sent, 10, SpringLayout.WEST, panel);
+		sl_contentPane.putConstraint(SpringLayout.EAST, label_spDir_sent, -10, SpringLayout.EAST, panel);
+		contentPane.add(label_spDir_sent);
+		
+		//////////////////////////////////////////////////////////////////////////////////
+		JPanel panel_4 = new JPanel();
+		sl_contentPane.putConstraint(SpringLayout.NORTH, panel_4, 25, SpringLayout.SOUTH, panel);
+		sl_contentPane.putConstraint(SpringLayout.WEST, panel_4, 0, SpringLayout.WEST, panel);
+		sl_contentPane.putConstraint(SpringLayout.SOUTH, panel_4, -1, SpringLayout.SOUTH, contentPane);
+		sl_contentPane.putConstraint(SpringLayout.EAST, panel_4, 200, SpringLayout.WEST, contentPane);
+		panel_4.setBorder(new TitledBorder(null, "Watched Variables", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		contentPane.add(panel_4);
+		
+		table = new JTable();
+		table.setRowHeight(20);
+		table.setGridColor(SystemColor.inactiveCaption);
+		table.setIntercellSpacing(new Dimension(4, 4));
+		table.setBackground(UIManager.getColor("InternalFrame.minimizeIconBackground"));
+		table.setEnabled(false);
+		table.setBorder(new MatteBorder(1, 1, 1, 1, (Color) SystemColor.inactiveCaption));
+		table.setModel(new DefaultTableModel(
+			new Object[][] {
+				{"Speed", null},
+				{"Angle", null},
+				{"Distance", null},
+				{"Direction", null},
+				{"Temperature", null},
+				{"Bumps", null},
+				{"Battery", null},
+			},
+			new String[] {
+				"Propertie", "value"
+			}
+		));
+		table.getColumnModel().getColumn(0).setPreferredWidth(89);
+		SpringLayout sl_panel_4 = new SpringLayout();
+		sl_panel_4.putConstraint(SpringLayout.NORTH, table, 5, SpringLayout.NORTH, panel_4);
+		sl_panel_4.putConstraint(SpringLayout.WEST, table, 5, SpringLayout.WEST, panel_4);
+		sl_panel_4.putConstraint(SpringLayout.EAST, table, -5, SpringLayout.EAST, panel_4);
+		panel_4.setLayout(sl_panel_4);
+		panel_4.add(table);
+		table_model = (DefaultTableModel) table.getModel();
+
+		//////////////////////////////////////////////////////////////////////////////////
+		// the main tab body of the app
+		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		sl_contentPane.putConstraint(SpringLayout.NORTH, tabbedPane, 5, SpringLayout.NORTH, contentPane);
+		sl_contentPane.putConstraint(SpringLayout.WEST, tabbedPane, 6, SpringLayout.EAST, panel);
+		sl_contentPane.putConstraint(SpringLayout.SOUTH, tabbedPane, -1, SpringLayout.SOUTH, contentPane);
+		sl_contentPane.putConstraint(SpringLayout.EAST, tabbedPane, -1, SpringLayout.EAST, contentPane);
+		contentPane.add(tabbedPane);
+
+		//////////////////////////////////////////////////////////////////////////////////
+		// Controller tab
+		JPanel panel_Controller = new JPanel();
+		tabbedPane.addTab("Controller", null, panel_Controller, null);
+		SpringLayout sl_panel_Controller = new SpringLayout();
+		panel_Controller.setLayout(sl_panel_Controller);
+		
+		// the Manual Control button
+		JToggleButton tglbtnNewToggleButton = new JToggleButton("Manual Control");
+		sl_panel_Controller.putConstraint(SpringLayout.NORTH, tglbtnNewToggleButton, 11, SpringLayout.NORTH, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.WEST, tglbtnNewToggleButton, 10, SpringLayout.WEST, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.SOUTH, tglbtnNewToggleButton, 49, SpringLayout.NORTH, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.EAST, tglbtnNewToggleButton, 180, SpringLayout.WEST, panel_Controller);
+		panel_Controller.add(tglbtnNewToggleButton);
+		
+		JLabel lblManualControlMust = new JLabel("Manual control must be on to send commands");
+		sl_panel_Controller.putConstraint(SpringLayout.NORTH, lblManualControlMust, 23, SpringLayout.NORTH, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.WEST, lblManualControlMust, 190, SpringLayout.WEST, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.EAST, lblManualControlMust, 474, SpringLayout.WEST, panel_Controller);
+		panel_Controller.add(lblManualControlMust);
+		
+		/////////////////////////////////////
+		JPanel panel_5 = new JPanel();
+		sl_panel_Controller.putConstraint(SpringLayout.NORTH, panel_5, 60, SpringLayout.NORTH, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.WEST, panel_5, 10, SpringLayout.WEST, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.EAST, panel_5, -8, SpringLayout.EAST, panel_Controller);
+		panel_5.setBorder(new TitledBorder(null, "Input Helper", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		panel_Controller.add(panel_5);
+		
+		textField = new JTextField();
+		textField.setEditable(false);
+		textField.setColumns(10);
+		
+		JButton btnNewButton = new JButton("Send");
+		
+		//
+		
+		txtrInputCommandInfo = new JTextArea();
+		txtrInputCommandInfo.setAutoscrolls(false);
+		txtrInputCommandInfo.setLineWrap(true);
+		txtrInputCommandInfo.setRows(8);
+		txtrInputCommandInfo.setTabSize(4);
+		txtrInputCommandInfo.setWrapStyleWord(true);
+		
+		tabbedPane_inputHelper = new JTabbedPane(JTabbedPane.LEFT);
+		tabbedPane_inputHelper.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+		tabbedPane_inputHelper.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				String tab_name = tabbedPane_inputHelper.getTitleAt(tabbedPane_inputHelper.getSelectedIndex());
+				txtrInputCommandInfo.setText(get_doc(tab_name.toLowerCase()));
+			}
+		});
+		
+		JScrollPane scrollPane_Drive = new JScrollPane();
+		scrollPane_Drive.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		tabbedPane_inputHelper.addTab("Drive", null, scrollPane_Drive, null);
+		
+		JPanel panel_driveInput = new JPanel();
+		panel_driveInput.setBackground(SystemColor.window);
+		scrollPane_Drive.setViewportView(panel_driveInput);
+		
+		JScrollPane scrollPane_Clean = new JScrollPane();
+		tabbedPane_inputHelper.addTab("Clean", null, scrollPane_Clean, null);
+		
+		JPanel panel_cleanInput = new JPanel();
+		panel_cleanInput.setBackground(SystemColor.window);
+		scrollPane_Clean.setViewportView(panel_cleanInput);
+		
+		JScrollPane scrollPane_Reset = new JScrollPane();
+		tabbedPane_inputHelper.addTab("Reset", null, scrollPane_Reset, null);
+		
+		JPanel panel_resetInput = new JPanel();
+		panel_resetInput.setBackground(SystemColor.window);
+		scrollPane_Reset.setViewportView(panel_resetInput);
+		
+		JScrollPane scrollPane_LEDs = new JScrollPane();
+		tabbedPane_inputHelper.addTab("LEDs", null, scrollPane_LEDs, null);
+		
+		JPanel panel_LEDInput = new JPanel();
+		panel_LEDInput.setBackground(SystemColor.window);
+		scrollPane_LEDs.setViewportView(panel_LEDInput);
+		
+		JScrollPane scrollPane_Buttons = new JScrollPane();
+		tabbedPane_inputHelper.addTab("Buttons", null, scrollPane_Buttons, null);
+		
+		JPanel panel_buttonsInput = new JPanel();
+		panel_buttonsInput.setBackground(SystemColor.window);
+		scrollPane_Buttons.setViewportView(panel_buttonsInput);
+		
+		JScrollPane scrollPane_Song = new JScrollPane();
+		tabbedPane_inputHelper.addTab("Song", null, scrollPane_Song, null);
+		
+		JPanel panel_songInput = new JPanel();
+		panel_songInput.setBackground(SystemColor.window);
+		scrollPane_Song.setViewportView(panel_songInput);
+		
+		JScrollPane scrollPane_Sensors = new JScrollPane();
+		tabbedPane_inputHelper.addTab("Sensors", null, scrollPane_Sensors, null);
+		
+		JPanel panel_sensorsInput = new JPanel();
+		panel_sensorsInput.setBackground(SystemColor.window);
+		scrollPane_Sensors.setViewportView(panel_sensorsInput);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		scrollPane.setViewportView(txtrInputCommandInfo);
+
+		JLabel lblDocumentation = new JLabel("Documentation");
+		lblDocumentation.setHorizontalAlignment(SwingConstants.CENTER);
+		scrollPane.setColumnHeaderView(lblDocumentation);
+
+		/////////////////////////////////////
+		JPanel panel_6 = new JPanel();
+		sl_panel_Controller.putConstraint(SpringLayout.SOUTH, panel_5, -6, SpringLayout.NORTH, panel_6);
+		GroupLayout gl_panel_5 = new GroupLayout(panel_5);
+		gl_panel_5.setHorizontalGroup(
+			gl_panel_5.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_5.createSequentialGroup()
+					.addGap(5)
+					.addGroup(gl_panel_5.createParallelGroup(Alignment.LEADING)
+						.addGroup(gl_panel_5.createSequentialGroup()
+							.addComponent(tabbedPane_inputHelper, GroupLayout.DEFAULT_SIZE, 262, Short.MAX_VALUE)
+							.addGap(5)
+							.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE))
+						.addGroup(gl_panel_5.createSequentialGroup()
+							.addComponent(textField, GroupLayout.DEFAULT_SIZE, 334, Short.MAX_VALUE)
+							.addGap(17)
+							.addComponent(btnNewButton, GroupLayout.PREFERRED_SIZE, 94, GroupLayout.PREFERRED_SIZE)))
+					.addGap(5))
+		);
+		gl_panel_5.setVerticalGroup(
+			gl_panel_5.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_5.createSequentialGroup()
+					.addGap(5)
+					.addGroup(gl_panel_5.createParallelGroup(Alignment.LEADING)
+						.addComponent(tabbedPane_inputHelper, GroupLayout.DEFAULT_SIZE, 185, Short.MAX_VALUE)
+						.addGroup(gl_panel_5.createSequentialGroup()
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 182, Short.MAX_VALUE)
+							.addGap(5)))
+					.addGap(5)
+					.addGroup(gl_panel_5.createParallelGroup(Alignment.LEADING)
+						.addComponent(btnNewButton)
+						.addComponent(textField, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE))
+					.addGap(3))
+		);
+		panel_5.setLayout(gl_panel_5);
+		sl_panel_Controller.putConstraint(SpringLayout.WEST, panel_6, 10, SpringLayout.WEST, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.EAST, panel_6, -8, SpringLayout.EAST, panel_Controller);
+		panel_6.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Raw Output", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		panel_Controller.add(panel_6);
+		SpringLayout sl_panel_6 = new SpringLayout();
+		panel_6.setLayout(sl_panel_6);
+		
+		JButton button = new JButton("Send");
+		panel_6.add(button);
+		
+		JLabel lblPleaseLookAt = new JLabel("Please look at all documentation before using the Raw Output method.");
+		sl_panel_6.putConstraint(SpringLayout.WEST, lblPleaseLookAt, 5, SpringLayout.WEST, panel_6);
+		sl_panel_6.putConstraint(SpringLayout.EAST, lblPleaseLookAt, 355, SpringLayout.WEST, panel_6);
+		panel_6.add(lblPleaseLookAt);
+		
+		textField_1 = new JTextField();
+		sl_panel_6.putConstraint(SpringLayout.NORTH, textField_1, 10, SpringLayout.NORTH, panel_6);
+		sl_panel_6.putConstraint(SpringLayout.NORTH, lblPleaseLookAt, 20, SpringLayout.SOUTH, textField_1);
+		sl_panel_6.putConstraint(SpringLayout.NORTH, button, 10, SpringLayout.SOUTH, textField_1);
+		sl_panel_6.putConstraint(SpringLayout.WEST, button, -95, SpringLayout.EAST, textField_1);
+		sl_panel_6.putConstraint(SpringLayout.EAST, button, 0, SpringLayout.EAST, textField_1);
+		sl_panel_6.putConstraint(SpringLayout.WEST, textField_1, 5, SpringLayout.WEST, panel_6);
+		sl_panel_6.putConstraint(SpringLayout.SOUTH, textField_1, 30, SpringLayout.NORTH, panel_6);
+		sl_panel_6.putConstraint(SpringLayout.EAST, textField_1, -5, SpringLayout.EAST, panel_6);
+		panel_6.add(textField_1);
+		textField_1.setColumns(10);
+
+		/////////////////////////////////////
+		JPanel panel_7 = new JPanel();
+		sl_panel_Controller.putConstraint(SpringLayout.NORTH, panel_6, -100, SpringLayout.NORTH, panel_7);
+		sl_panel_Controller.putConstraint(SpringLayout.NORTH, panel_7, -100, SpringLayout.SOUTH, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.EAST, panel_7, -8, SpringLayout.EAST, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.SOUTH, panel_6, -6, SpringLayout.NORTH, panel_7);
+		sl_panel_Controller.putConstraint(SpringLayout.SOUTH, panel_7, -13, SpringLayout.SOUTH, panel_Controller);
+		sl_panel_Controller.putConstraint(SpringLayout.WEST, panel_7, 10, SpringLayout.WEST, panel_Controller);
+		panel_7.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Sensor Input", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		panel_Controller.add(panel_7);
+		
+		textField_2 = new JTextField();
+		textField_2.setColumns(10);
+		
+		JLabel lblRaw = new JLabel("Raw");
+		GroupLayout gl_panel_7 = new GroupLayout(panel_7);
+		gl_panel_7.setHorizontalGroup(
+			gl_panel_7.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_7.createSequentialGroup()
+					.addGap(4)
+					.addComponent(lblRaw, GroupLayout.PREFERRED_SIZE, 46, GroupLayout.PREFERRED_SIZE)
+					.addGap(10)
+					.addComponent(textField_2, GroupLayout.DEFAULT_SIZE, 388, Short.MAX_VALUE)
+					.addGap(14))
+		);
+		gl_panel_7.setVerticalGroup(
+			gl_panel_7.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_7.createSequentialGroup()
+					.addGap(23)
+					.addComponent(lblRaw))
+				.addGroup(gl_panel_7.createSequentialGroup()
+					.addGap(20)
+					.addComponent(textField_2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+		);
+		panel_7.setLayout(gl_panel_7);
+		
+		JPanel panel_Connection = new JPanel();
+		tabbedPane.addTab("Connection", null, panel_Connection, null);
+		
+		JPanel panel_1 = new JPanel();
+		panel_1.setBorder(new TitledBorder(null, "iRobot", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		
+		JPanel panel_2 = new JPanel();
+		panel_2.setBorder(new TitledBorder(null, "Simulator", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		GroupLayout gl_panel_Connection = new GroupLayout(panel_Connection);
+		gl_panel_Connection.setHorizontalGroup(
+			gl_panel_Connection.createParallelGroup(Alignment.TRAILING)
+				.addGroup(gl_panel_Connection.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(gl_panel_Connection.createParallelGroup(Alignment.TRAILING)
+						.addComponent(panel_1, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
+						.addComponent(panel_2, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE))
+					.addContainerGap())
+		);
+		gl_panel_Connection.setVerticalGroup(
+			gl_panel_Connection.createParallelGroup(Alignment.TRAILING)
+				.addGroup(gl_panel_Connection.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(panel_1, GroupLayout.DEFAULT_SIZE, 240, Short.MAX_VALUE)
+					.addGap(11)
+					.addComponent(panel_2, GroupLayout.DEFAULT_SIZE, 240, Short.MAX_VALUE)
+					.addContainerGap())
+		);
+		
+		JButton button_1 = new JButton("Connect");
+		GroupLayout gl_panel_1 = new GroupLayout(panel_1);
+		gl_panel_1.setHorizontalGroup(
+			gl_panel_1.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_1.createSequentialGroup()
+					.addComponent(button_1, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
+					.addContainerGap(357, Short.MAX_VALUE))
+		);
+		gl_panel_1.setVerticalGroup(
+			gl_panel_1.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_1.createSequentialGroup()
+					.addComponent(button_1)
+					.addContainerGap(196, Short.MAX_VALUE))
+		);
+		panel_1.setLayout(gl_panel_1);
+		
+		JButton btnStartSimulator = new JButton("Start Simulator");
+		btnStartSimulator.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				con.sim_con = new create2_environment.Controller();
+			}
+		});
+		
+		JButton btnConect = new JButton("Connect");
+		btnConect.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+			}
+		});
+		GroupLayout gl_panel_2 = new GroupLayout(panel_2);
+		gl_panel_2.setHorizontalGroup(
+			gl_panel_2.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_2.createSequentialGroup()
+					.addComponent(btnStartSimulator)
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addComponent(btnConect, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
+					.addContainerGap(244, Short.MAX_VALUE))
+		);
+		gl_panel_2.setVerticalGroup(
+			gl_panel_2.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_2.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(gl_panel_2.createParallelGroup(Alignment.BASELINE)
+						.addComponent(btnStartSimulator)
+						.addComponent(btnConect))
+					.addContainerGap(185, Short.MAX_VALUE))
+		);
+		panel_2.setLayout(gl_panel_2);
+		panel_Connection.setLayout(gl_panel_Connection);
+		
+		JPanel panel_AI = new JPanel();
+		tabbedPane.addTab("AI", null, panel_AI, null);
+
+		//////////////////////////////////////////////////////////////////////////////////
+		// tree tab
+		scrollPane_Tree = new JScrollPane();
+		scrollPane_Tree.setAutoscrolls(true);
+		tabbedPane.addTab("Tree", null, scrollPane_Tree, null);
+		
+		panel_tree = new TreePanel();
+		panel_tree.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+		panel_tree.setBackground(Color.WHITE);
+		scrollPane_Tree.setViewportView(panel_tree);
+
+		//////////////////
+		JPanel panel_Kinect = new JPanel();
+		tabbedPane.addTab("Kinect", null, panel_Kinect, null);
+		
+		JPanel panel_3 = new JPanel();
+		
+		scrollPane_1 = new JScrollPane();
+		scrollPane_1.setAutoscrolls(true);
+		
+		panel_kinect = new KinectPanel();
+		//JPanel panel_kinect = new JPanel();
+		scrollPane_1.setViewportView(panel_kinect);
+		GroupLayout gl_panel_Kinect = new GroupLayout(panel_Kinect);
+		gl_panel_Kinect.setHorizontalGroup(
+			gl_panel_Kinect.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_Kinect.createSequentialGroup()
+					.addGroup(gl_panel_Kinect.createParallelGroup(Alignment.TRAILING)
+						.addComponent(scrollPane_1, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE)
+						.addComponent(panel_3, Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 490, GroupLayout.PREFERRED_SIZE))
+					.addGap(0))
+		);
+		gl_panel_Kinect.setVerticalGroup(
+			gl_panel_Kinect.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_Kinect.createSequentialGroup()
+					.addComponent(panel_3, GroupLayout.PREFERRED_SIZE, 91, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(scrollPane_1, GroupLayout.DEFAULT_SIZE, 409, Short.MAX_VALUE))
+		);
+		
+		lblNewLabel = new JLabel("New label");
+		
+		slider = new JSlider();
+		slider.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				lblNewLabel.setText(""+slider.getValue());
+			}
+		});
+		slider.setValue(0);
+		slider.setMaximum(360);
+		slider.setMajorTickSpacing(10);
+		slider.setMinorTickSpacing(1);
+		slider.setSnapToTicks(true);
+		slider.setPaintTicks(true);
+		slider.setSize(360, 50);
+		panel_3.add(slider);
+		
+		panel_3.add(lblNewLabel);
+		panel_Kinect.setLayout(gl_panel_Kinect);
+		
+
+		JPanel panel_Tablet = new JPanel();
+		tabbedPane.addTab("Tablet", null, panel_Tablet, null);
+		panel_Tablet.setLayout(null);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(6, 6, 480, 421);
+		panel_Tablet.add(scrollPane_1);
+		
+		tabletTextArea = new JTextArea();
+		scrollPane_1.setViewportView(tabletTextArea);
+		
+		msgTextField = new JTextField();
+		msgTextField.setBounds(6, 480, 351, 28);
+		panel_Tablet.add(msgTextField);
+		msgTextField.setColumns(10);
+		
+		JButton btn_tabletSend = new JButton("Send");
+		btn_tabletSend.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try{
+					if (msgTextField.getText().length() > 0)
+					{
+						con.tab.sendMsg(msgTextField.getText());
+						msgTextField.setText("");
+					}
+				}
+				catch (NullPointerException nullPoint){
+					
+				}
+			}
+		});
+		
+		btn_tabletSend.setBounds(369, 481, 117, 29);
+		panel_Tablet.add(btn_tabletSend);
+		
+		JButton btn_send_cookie = new JButton("Send Cookie");
+		btn_send_cookie.setBounds(44, 439, 117, 29);
+		panel_Tablet.add(btn_send_cookie);
+		
+		btn_send_cookie.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try{
+					File img = new File("Cookie.jpg");
+					BufferedImage buffImg = ImageIO.read(img);
+					con.tab.sendImg(buffImg);
+				}
+				catch (IOException ioe){
+					
+				}
+			}
+		});
+		
+		JButton btn_send_kermit = new JButton("Send Kermit");
+		btn_send_kermit.setBounds(213, 439, 117, 29);
+		panel_Tablet.add(btn_send_kermit);
+		
+		btn_send_kermit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try{
+					File img = new File("Kermit.jpg");
+					BufferedImage buffImg = ImageIO.read(img);
+					con.tab.sendImg(buffImg);
+				}
+				catch (IOException ioe){
+					
+				}
+			}
+		});
+		
+		
+		//////////////////////////////////////////////////////////////////////////////////
+		setVisible(true);
+		
+		//
+		window_thread_start();
+	}
+	
+	private String get_doc(String id) {
+		String filename = "docs/documentation.xml";
+		try {
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db = dbf.newDocumentBuilder(); 
+			Document doc = db.parse(new File(filename));
+			
+			doc.getDocumentElement().normalize();
+			//System.out.println("Root element :" + doc.getDocumentElement().toString());
+			NodeList nList = doc.getElementsByTagName("doc");
+			for (int i = 0; i < nList.getLength(); i++) {
+				Node nNode = nList.item(i);
+				//System.out.println("\nCurrent Element :" + nNode.getNodeName());
+				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+					Element eElement = (Element) nNode;
+					if (eElement.getAttribute("id").compareTo(id) == 0) {
+						return eElement.getElementsByTagName("text").item(0).getTextContent();
+					}
+				}
+			}
+		} catch (SAXException | IOException | ParserConfigurationException e) {
+			e.printStackTrace();
+		}
+        
+		return "";
+	}
+
+	public void set_kinectView(BufferedImage img){
+		panel_kinect.img = img;
+		panel_kinect.repaint();
+	}
+	
+	private class MousePanel extends JPanel {
+		
+		int point_x = 0;
+		int point_y = 0;
+		int point_size = 10;
+		
+		public MousePanel(){
+			super();
+		}
+		
+		public void set_newPoint(int x, int y) {
+			point_x = x;
+			point_y = y;
+		}
+		
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);  
+			
+			int cx = this.getWidth()/2;
+			int cy = this.getHeight()/2;
+			
+			int px = cx+point_x-point_size/2;
+			int py = cy+point_y-point_size/2;
+			
+			g.drawOval(px, py, point_size, point_size);
+		}
+	}
+
+	class TreePanel extends JPanel {
+		
+		Quadtree painter = null;
+		
+		public TreePanel(){
+			super();
+		}
+		
+		public void reSize(int width, int height) {
+			this.setPreferredSize(new Dimension(width,  height));
+			this.revalidate();
+		}
+		
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			
+			if (painter != null) {
+				painter.paint(g);
+			}
+		}
+	}
+
+
+	class KinectPanel extends JPanel {
+		
+		BufferedImage img = null;
+		public int width = 640;
+		public int height = 480;
+		
+		public KinectPanel(){
+			super();
+		}
+		
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			Graphics2D g2 = (Graphics2D) g;
+
+			if (img != null){
+				con.kinect.viewer_width = con.kinect.getDepthWidth();
+				con.kinect.viewer_height = con.kinect.getDepthHeight();
+				width = con.kinect.getDepthWidth();
+				height = con.kinect.getDepthHeight();
+				
+				/*
+				BufferedImage kinect_image = new BufferedImage(width*2, height*2, BufferedImage.TYPE_4BYTE_ABGR);
+				Graphics2D bg2 = (Graphics2D) kinect_image.getGraphics();
+				
+				con.kinect.draw_depthImage(bg2, width, height);
+				
+				bg2.setColor(Color.WHITE);
+				con.kinect.draw_skeletons(bg2, width*2, height*2);
+				*/
+				if (kinect_image_got) {
+					g2.drawImage(kinect_image, 0, 0, null);
+					kinect_image_drawn = true;
+					kinect_image_got = false;
+				}
+				
+				this.setPreferredSize(new Dimension(width, height));
+				this.revalidate();
+			}
+		}
+	}
+}

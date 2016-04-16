@@ -108,7 +108,7 @@ public class Communication {
 	public Communication(Controller con){
 		this.con = con;
 		start_sim_com();
-		start_iRobot_com();
+		//start_iRobot_com();
 	}
 	
 	/**
@@ -123,7 +123,7 @@ public class Communication {
         		byte[] got = sPort.readBytes();
         		
 	        	try{
-	        		//parseInput(sensorList_index, got);
+	        		con.bot.parseInput(con.bot.sensorList_index, got);
 				} catch (IndexOutOfBoundsException e){
 				}
 			} catch (SerialPortException e) {
