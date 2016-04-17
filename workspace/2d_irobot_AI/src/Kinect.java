@@ -20,6 +20,7 @@ public class Kinect extends J4KSDK {
 
 	public int normal_number = 2;
 	public float[][][] normals = new float[640*480][normal_number][3];
+	public boolean[][] normal_range = new boolean[640*480][normal_number];
 	public int normal_index = 0;
 	
 	Skeleton[] skeletons;
@@ -269,7 +270,12 @@ public class Kinect extends J4KSDK {
 		return vec;
 		
 	}
-	
+	public boolean allGood(int index) {
+		for(int i=0; i<normal_number; i++){
+			if (!normal_range[index][i]) return false;
+		}
+		return true;
+	}
 	
 	public void draw_depthImage(Graphics2D g, int w, int h) {
 		
@@ -281,33 +287,30 @@ public class Kinect extends J4KSDK {
 		int width_cut = 100;
 		int height_cut = 50;
 		
-		double skip = 2;
-		int p_size = 4;
+		int skip = 5;
+		int p_size = skip*2;
 		
 		float[][] normals_dis = new float[(width)*(height)][3];
 		
 		//System.out.println(normals[500][0][0]+" "+normals[500][1][0]+" "+get_avg_normal(500)[0]);
-		for (int y = 0; y < height; y+=1) {
-			for (int x = 0; x < width; x+=1) {
+		for (int y = 0; y < height; y+=skip) {
+			for (int x = 0; x < width; x+=skip) {
 				
 				int index = y*getDepthWidth()+x;
 				
 				
 				set_avg_normal(index, map.realX[index], map.realY[index], map.realZ[index]);
 
-				if (x != width -1 && y != height -1) {
+				if (x != width-skip && y != height-skip) {
 					
 					float[] x1 = get_avg_normal(index);
-					float[] x2 = get_avg_normal(index+1);
-					float[] x3 = get_avg_normal(index+width);
+					float[] x2 = get_avg_normal(index+skip);
+					float[] x3 = get_avg_normal(index+width*skip);
 					
-					//float[] x1 = {get_avg_normal(index)[0], get_avg_normal(index)[1], get_avg_normal(index)[2]};
-					//float[] x2 = {get_avg_normal(index+1)[0], get_avg_normal(index+1)[1], get_avg_normal(index+1)[2]};
-					//float[] x3 = {get_avg_normal(index+width)[0], get_avg_normal(index+width)[1], get_avg_normal(index+width)[2]};
 					/*
 					float[] x1 = {map.realX[index], map.realY[index], map.realZ[index]};
-					float[] x2 = {map.realX[index+1], map.realY[index+1], map.realZ[index+1]};
-					float[] x3 = {map.realX[index+width], map.realY[index+width], map.realZ[index+width]};
+					float[] x2 = {map.realX[index+skip], map.realY[index+skip], map.realZ[index+skip]};
+					float[] x3 = {map.realX[index+width*skip], map.realY[index+width*skip], map.realZ[index+width*skip]};
 					*/
 					normals_dis[index] = normalizedNormalOf(x1, x2, x3);
 				}
@@ -318,10 +321,6 @@ public class Kinect extends J4KSDK {
 				}
 			}
 		}
-
-		normal_index++;// = (normal_index+1) % (normal_number);
-		if (normal_index >= normal_number) normal_index = 0;
-		
 		for (int y = height_cut; y < height-height_cut; y+=skip) {
 			for (int x = width_cut; x < width-width_cut; x+=skip) {
 				
@@ -331,10 +330,12 @@ public class Kinect extends J4KSDK {
 				
 				float depth = (float) (map.realZ[index]*5000.0);
 				
-				int scale = (int) (map.realZ[index]);//(int)((map.realZ[index]*100.0));
+				int scale = (int) (map.realZ[index]*100);//(int)((map.realZ[index]*100.0));
 				
-				int value_x = (int) (map.realX[index]*scale);
-				int value_y = (int) (map.realY[index]*scale);
+				//int value_x = (int) (map.realX[index]*scale);
+				//int value_y = (int) (map.realY[index]*scale);
+				float value_x = (map.realX[index]*scale);
+				float value_y = (map.realY[index]*scale);
 				
 				if (depth > 2500){ depth -= 2500; }
 				
@@ -360,10 +361,110 @@ public class Kinect extends J4KSDK {
 				g.setColor(c);
 				
 				//if (good) //valid && 
-				if(valid && good)
-					g.fillRect((int)(((width-x)*2-value_x)), (y*2-value_y), p_size, p_size);
+				if(valid && allGood(index))
+					g.fillRect((int)(((width-x)*2.0+value_x)), (int)(y*2.0-value_y), p_size, p_size);
+				//g.fillRect((int)(((width-x)*2.0+value_x)), (int)(y*2.0-value_y), p_size, p_size);
 			}
 		}
+		
+
+		normal_index++;// = (normal_index+1) % (normal_number);
+		if (normal_index >= normal_number) normal_index = 0;
+		
+	}
+
+	public void draw_depthImage_2d(Graphics2D g, int w, int h) {
+		
+		int width = getDepthWidth();
+		int height = getDepthHeight();
+		
+		double max_angle = .5;
+		
+		int width_cut = 100;
+		int height_cut = 50;
+		
+		int skip = 2;
+		
+		int p_size = skip*2;
+		
+		float[][] normals_dis = new float[(width)*(height)][3];
+		
+		for (int y = 0; y < height; y+=skip) {
+			for (int x = 0; x < width; x+=skip) {
+				
+				int index = y*getDepthWidth()+x;
+				
+				set_avg_normal(index, map.realX[index], map.realY[index], map.realZ[index]);
+
+				if (x != width-skip && y != height-skip) {
+					
+					float[] x1 = get_avg_normal(index);
+					float[] x2 = get_avg_normal(index+skip);
+					float[] x3 = get_avg_normal(index+width*skip);
+					/*
+					float[] x1 = {map.realX[index], map.realY[index], map.realZ[index]};
+					float[] x2 = {map.realX[index+1], map.realY[index+1], map.realZ[index+1]};
+					float[] x3 = {map.realX[index+width], map.realY[index+width], map.realZ[index+width]};
+					*/
+					normals_dis[index] = normalizedNormalOf(x1, x2, x3);
+				}
+				
+				if (x == width-1) {
+					float[] none = {1,1,1};
+					normals_dis[index] = none;
+				}
+			}
+		}
+		
+		//float[] dis = new float[100];
+		
+		
+		for (int x = width_cut; x < width-width_cut; x+=skip) {
+			//for (int y = height-height_cut; y >= height_cut ; y-=skip) {
+			//float min_depth = 99999;
+			//float min_value_x = 0;
+			
+			//for (int y = height-height_cut; y >= height_cut ; y-=skip) {
+			for (int y = height_cut; y < height-height_cut; y+=skip) {
+				
+				int index = y*getDepthWidth()+x;
+				boolean valid = map.validDepthAt(index);
+				
+				
+				float scale = (float) ((map.realZ[index])*1.238*100);
+				float value_x = (map.realX[index]*scale);
+				float value_z = (map.realZ[index]*scale);
+				
+				
+				//int value_y = (int) (map.realY[index]*scale);
+				
+				float x_vec = normals_dis[index][0];
+				float y_vec = normals_dis[index][2];
+				float z_vec = normals_dis[index][1];
+				
+				nnrng(normals_dis, index, (float) max_angle);
+				
+				float _r = 1-(((x_vec+1)/2) % 1);
+				float _g = 1-(((y_vec+1)/2) % 1);
+				float _b = 1-(((z_vec+1)/2) % 1);
+				
+				Color c = new Color(_r, _g, _b);
+				g.setColor(c);
+				
+				if(valid && allGood(index)){
+					//min_depth = value_z;
+					//min_value_x = value_x;
+					g.fillRect((int)( (width*1.5-x)+value_x)+width/2, (int) ((height*2.0)-value_z), p_size, p_size);
+					//counter--;
+					//if (counter <= 0) break;
+				}
+			}
+			//g.fillRect((int)(((width-x)*2+min_value_x))+1, (int) ((height*2)-(min_depth))+1, p_size, p_size);
+		}
+		
+
+		normal_index++;// = (normal_index+1) % (normal_number);
+		if (normal_index >= normal_number) normal_index = 0;
 		
 	}
 	
@@ -434,7 +535,11 @@ public class Kinect extends J4KSDK {
 		int c_index = index;
 		c = (normals[c_index][n1] < range && normals[c_index][n2] < range);
 		
-		return (u && d && l && r && c && ul && ur && dl && dr);
+		boolean good = (u && d && l && r && c && ul && ur && dl && dr);
+		
+		normal_range[c_index][normal_index] = good;
+		
+		return good;
 	}
 	
 	float dot(float[] n1, float[] n2) {
