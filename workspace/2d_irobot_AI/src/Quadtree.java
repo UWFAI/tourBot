@@ -1,6 +1,8 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.geom.Line2D;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -13,7 +15,7 @@ public class Quadtree {
 	public Node root;
 	
 	// max depth that the tree can be
-	int max_depth = 12;
+	int max_depth = 11;
 	
 	// I was thinking that this has a way of knowing if a place is free, !free, !Checked
 	// if we are to do this we need to send a point every step and not just at the 
@@ -28,12 +30,15 @@ public class Quadtree {
 		controller.window.panel_tree.painter = this;
 		controller.window.panel_tree.reSize(root.x2 - root.x1, root.y2 - root.y1);
 		
+		//set_line(50, 50, 500, 45, "free");
+		
 		//set_point(200, 200, "hit");
 		//set_point(400, 200, "free");
 		//set_circle( 200, 200, 50, "hit");
 		//set_circle( 400, 400, 25, "free");
 		
 		// a simple timer to repaint the tree
+		/*
 		Timer timer = new Timer();
 		TimerTask myTask = new TimerTask() {
 		    @Override
@@ -41,7 +46,15 @@ public class Quadtree {
 		    	controller.window.panel_tree.repaint();
 		    }
 		};
-		timer.schedule(myTask, 1000, 1000);
+		timer.schedule(myTask, 100, 100);
+		*/
+		new Thread( new Runnable() {
+            public void run() {
+            	while(true) {
+            		controller.window.panel_tree.repaint();
+        		}
+            }
+        }).start();
 	}
 	
 	// start
@@ -66,10 +79,11 @@ public class Quadtree {
 		return false;
 	}
 	
+	//// circle
 	// start
 	public void set_circle( int cx, int cy, int cr, String state){
 		set_circle(0, root,  cx, cy, cr, state);
-		tree_fix(root);
+		//tree_fix(root);
 	}
 	// run
 	public boolean set_circle(int depth, Node node, int cx, int cy, int cr, String state){
@@ -77,15 +91,10 @@ public class Quadtree {
 			return true;
 		}
 		
-		/*
-		if (node.UL.state == state && node.UR.state == state && node.DL.state == state && node.DR.state == state){
-			return true;
-		}*/
-		
 		if (node.state == state)
 			return true;
 		
-		if (intersects(cx, cy, cr, node)) {
+		if (intersect_circle(cx, cy, cr, node)) {
 			node.split();
 			set_circle(depth+1, node.UL, cx, cy, cr, state);
 			set_circle(depth+1, node.UR, cx, cy, cr, state);
@@ -99,8 +108,7 @@ public class Quadtree {
 		return false;
 	}
 	
-	public boolean intersects(int cx, int cy, int cr, Node node)
-	{
+	public boolean intersect_circle(int cx, int cy, int cr, Node node) {
 	    int cd_x = Math.abs(cx - (node.x1 + node.x2)/2);
 	    int cd_y = Math.abs(cy - (node.y1 + node.y2)/2);
 
@@ -118,8 +126,115 @@ public class Quadtree {
 	    return (cod_sq <= (cr*cr));
 	}
 	
+	//// line
+	// start
+	public void set_line(int x1, int y1, int x2, int y2, String state){
+		set_line(0, root,  x1, y1, x2, y2, state);
+		tree_fix(root);
+	}
+	// run
+	public boolean set_line(int depth, Node node, int x1, int y1, int x2, int y2, String state){
+		if (depth > max_depth) {
+			return true;
+		}
+		
+		if (node.state == state)
+			return true;
+		
+		
+		if (intersect_line(x1, y1, x2, y2, node)) {
+		//if (SegmentIntersectRectangle(x1, y1, x2, y2, node)) {
+			node.split();
+			set_line(depth+1, node.UL, x1, y1, x2, y2, state);
+			set_line(depth+1, node.UR, x1, y1, x2, y2, state);
+			set_line(depth+1, node.DL, x1, y1, x2, y2, state);
+			set_line(depth+1, node.DR, x1, y1, x2, y2, state);
+		}
+		
+		if (depth == max_depth) {
+			node.state = state;
+		}
+		return false;
+	}
+	
+	public boolean intersect_line(int x1, int y1, int x2, int y2, Node node) {
+		Rectangle r1 = new Rectangle(node.x1, node.y1, node.x2 - node.x1, node.y2 - node.y1);
+		Line2D l1 = new Line2D.Float(x1, y1, x2, y2);
+		return l1.intersects(r1);
+	}
+
+	public boolean SegmentIntersectRectangle(int x1, int y1, int x2, int y2, Node node) {
+		double a_rectangleMinX = node.x1;
+        double a_rectangleMinY = node.y1;
+        double a_rectangleMaxX = node.x2;
+        double a_rectangleMaxY = node.y2;
+        double a_p1x = x1;
+        double a_p1y = y1;
+        double a_p2x = x2;
+        double a_p2y = y2;
+		
+		// Find min and max X for the segment
+		double minX = a_p1x;
+		double maxX = a_p2x;
+		
+		if(a_p1x > a_p2x) {
+			minX = a_p2x;
+			maxX = a_p1x;
+		}
+		
+		// Find the intersection of the segment's and rectangle's x-projections
+		if(maxX > a_rectangleMaxX) {
+			maxX = a_rectangleMaxX;
+		}
+		
+		if(minX < a_rectangleMinX) {
+			minX = a_rectangleMinX;
+		}
+		
+		 // If their projections do not intersect return false
+		if(minX > maxX) {
+			return false;
+		}
+		
+		// Find corresponding min and max Y for min and max X we found before
+		double minY = a_p1y;
+		double maxY = a_p2y;
+		
+		double dx = a_p2x - a_p1x;
+		
+		if(Math.abs(dx) > 0.0000001) {
+			double a = (a_p2y - a_p1y) / dx;
+			double b = a_p1y - a * a_p1x;
+			minY = a * minX + b;
+			maxY = a * maxX + b;
+		}
+		
+		if(minY > maxY) {
+			double tmp = maxY;
+			maxY = minY;
+			minY = tmp;
+		}
+		
+		// Find the intersection of the segment's and rectangle's y-projections
+		if(maxY > a_rectangleMaxY) {
+			maxY = a_rectangleMaxY;
+		}
+		
+		if(minY < a_rectangleMinY) {
+			minY = a_rectangleMinY;
+		}
+		
+		 // If Y-projections do not intersect return false
+		if(minY > maxY) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
 	// 
-	private void tree_fix(Node node) {
+	public void tree_fix(Node node) {
 		if (node.state == "not checked") {
 			
 			int ch_UL = 0;
@@ -151,11 +266,17 @@ public class Quadtree {
 		}
 	}
 	
+	public int draw_bot_x = 0;
+	public int draw_bot_y = 0;
+	
 	public void paint(Graphics g){
 		Graphics2D g2 = (Graphics2D) g;
 		
 		// draw all the nodes recursively
 		draw_node(root, g2);
+		
+		//
+		g2.drawOval(draw_bot_x-12, draw_bot_y-12, 24, 24);
 	}
 	
 	private void draw_node(Node node, Graphics2D g2){
@@ -176,7 +297,6 @@ public class Quadtree {
 		if (node.UR != null) draw_node(node.UR, g2);
 		if (node.DL != null) draw_node(node.DL, g2);
 		if (node.DR != null) draw_node(node.DR, g2);
-		
 	}	
 	
 	//

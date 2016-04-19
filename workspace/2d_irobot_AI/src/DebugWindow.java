@@ -128,6 +128,7 @@ public class DebugWindow extends JFrame {
 	public volatile BufferedImage main_kinect_image = null;
 	public volatile int kinect_image_drawn = 0;
 	public volatile boolean clear = true;
+	public JTextArea textArea;
 	
 	@SuppressWarnings("static-access")
 	private void thread_run() {
@@ -140,7 +141,7 @@ public class DebugWindow extends JFrame {
 
 			if (con.kinect.updated){
 				
-				kinect_image = new BufferedImage(kinect_width*4, kinect_height*2, BufferedImage.TYPE_INT_RGB);
+				kinect_image = new BufferedImage(Math.max(kinect_width*4, 1), Math.max(kinect_height*2, 1), BufferedImage.TYPE_INT_RGB);
 				Graphics2D bg2 = (Graphics2D) kinect_image.getGraphics();
 				
 				//con.kinect.draw_depthImage(bg2, kinect_width, kinect_height);
@@ -152,7 +153,7 @@ public class DebugWindow extends JFrame {
 				con.kinect.updated = false;
 				
 				clear = false;
-				main_kinect_image = new BufferedImage(kinect_width*4, kinect_height*2, BufferedImage.TYPE_INT_RGB);
+				main_kinect_image = new BufferedImage(Math.max(kinect_width*4, 1), Math.max(kinect_height*2, 1), BufferedImage.TYPE_INT_RGB);
 				bg2 = (Graphics2D) main_kinect_image.getGraphics();
 				bg2.drawImage(kinect_image, 0, 0, null);
 				clear = true;
@@ -664,21 +665,28 @@ public class DebugWindow extends JFrame {
 		);
 		
 		lblNewLabel = new JLabel("New label");
+		lblNewLabel.setBounds(315, 10, 56, 16);
 		
 		slider = new JSlider();
+		slider.setLocation(110, 5);
 		slider.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent arg0) {
 				lblNewLabel.setText(""+slider.getValue());
 			}
 		});
+		panel_3.setLayout(null);
 		slider.setMaximum(360);
 		slider.setValue(170);
 		slider.setMajorTickSpacing(1);
 		slider.setMinorTickSpacing(1);
-		slider.setSize(360, 50);
+		slider.setSize(200, 26);
 		panel_3.add(slider);
 		
 		panel_3.add(lblNewLabel);
+		
+		textArea = new JTextArea();
+		textArea.setBounds(12, 33, 466, 22);
+		panel_3.add(textArea);
 		panel_Kinect.setLayout(gl_panel_Kinect);
 		
 

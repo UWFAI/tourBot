@@ -18,11 +18,13 @@ public class Kinect extends J4KSDK {
 	public int viewer_width = getDepthWidth();
 	public int viewer_height = getDepthHeight();
 
-	public int normal_number = 2;
+	public int normal_number = 1;
 	public float[][][] normals = new float[640*480][normal_number][3];
 	public boolean[][] normal_range = new boolean[640*480][normal_number];
 	public int normal_index = 0;
 	
+	float[][] distance_2d = new float[500][2];
+	float[] distance_2d_count = new float[640*480];
 	Skeleton[] skeletons;
 	DepthMap map = null;
 	
@@ -42,20 +44,11 @@ public class Kinect extends J4KSDK {
 		skeletons[3] = new Skeleton();
 		skeletons[4] = new Skeleton();
 		skeletons[5] = new Skeleton();
-		this.
+		//this.
 		//start(J4KSDK.COLOR|J4KSDK.DEPTH|J4KSDK.SKELETON);
 		//start(J4KSDK.COLOR);
-		start(J4KSDK.DEPTH|J4KSDK.SKELETON|Kinect.UV|Kinect.XYZ|Kinect.PLAYER_INDEX);
+		start(J4KSDK.DEPTH|J4KSDK.SKELETON|Kinect.XYZ);
 		
-		/*
-		for(int p=0; p<640*480; p++){
-			for(int a=0; a<normal_number; a++){
-				for(int i=0; i<3; i++){
-					normals[p][a][i] = 0;
-				}
-			}
-		}
-		*/
 	}
 	
 	@Override
@@ -390,42 +383,26 @@ public class Kinect extends J4KSDK {
 		float[][] normals_dis = new float[(width)*(height)][3];
 		
 		for (int y = 0; y < height; y+=skip) {
-			for (int x = 0; x < width; x+=skip) {
+			for (int x = width_cut; x < width-width_cut; x+=1) {
 				
 				int index = y*getDepthWidth()+x;
 				
 				set_avg_normal(index, map.realX[index], map.realY[index], map.realZ[index]);
-
+				
 				if (x != width-skip && y != height-skip) {
 					
 					float[] x1 = get_avg_normal(index);
 					float[] x2 = get_avg_normal(index+skip);
 					float[] x3 = get_avg_normal(index+width*skip);
-					/*
-					float[] x1 = {map.realX[index], map.realY[index], map.realZ[index]};
-					float[] x2 = {map.realX[index+1], map.realY[index+1], map.realZ[index+1]};
-					float[] x3 = {map.realX[index+width], map.realY[index+width], map.realZ[index+width]};
-					*/
+					
 					normals_dis[index] = normalizedNormalOf(x1, x2, x3);
-				}
-				
-				if (x == width-1) {
-					float[] none = {1,1,1};
-					normals_dis[index] = none;
 				}
 			}
 		}
 		
-		//float[] dis = new float[100];
-		
-		
-		for (int x = width_cut; x < width-width_cut; x+=skip) {
-			//for (int y = height-height_cut; y >= height_cut ; y-=skip) {
-			//float min_depth = 99999;
-			//float min_value_x = 0;
-			
-			//for (int y = height-height_cut; y >= height_cut ; y-=skip) {
-			for (int y = height_cut; y < height-height_cut; y+=skip) {
+		for (int x = width_cut; x < width-width_cut; x+=1) {
+			distance_2d[x][1] = 0;
+			for (int y = height-height_cut; y >= height_cut ; y-=skip) {
 				
 				int index = y*getDepthWidth()+x;
 				boolean valid = map.validDepthAt(index);
@@ -434,9 +411,6 @@ public class Kinect extends J4KSDK {
 				float scale = (float) ((map.realZ[index])*1.238*100);
 				float value_x = (map.realX[index]*scale);
 				float value_z = (map.realZ[index]*scale);
-				
-				
-				//int value_y = (int) (map.realY[index]*scale);
 				
 				float x_vec = normals_dis[index][0];
 				float y_vec = normals_dis[index][2];
@@ -452,17 +426,23 @@ public class Kinect extends J4KSDK {
 				g.setColor(c);
 				
 				if(valid && allGood(index)){
-					//min_depth = value_z;
-					//min_value_x = value_x;
-					g.fillRect((int)( (width*1.5-x)+value_x)+width/2, (int) ((height*2.0)-value_z), p_size, p_size);
-					//counter--;
-					//if (counter <= 0) break;
+					distance_2d_count[index]++;
+					
+					float distance = (float) ((height*2.0)-value_z);
+					g.fillRect((int)( (width*1.5-x)+value_x)+width/2, (int) distance, p_size, p_size);
+
+					if (distance_2d_count[index] >= 5){
+						if (distance_2d[x][1] == 0 || distance_2d[x][1] > value_z){
+							distance_2d[x][0] = value_x;
+							distance_2d[x][1] = value_z;
+						}
+					}
+				} else {
+					distance_2d_count[index] = 0;
 				}
 			}
-			//g.fillRect((int)(((width-x)*2+min_value_x))+1, (int) ((height*2)-(min_depth))+1, p_size, p_size);
 		}
 		
-
 		normal_index++;// = (normal_index+1) % (normal_number);
 		if (normal_index >= normal_number) normal_index = 0;
 		
@@ -592,6 +572,9 @@ public class Kinect extends J4KSDK {
 		normal[1] = normal[1];
 		normal[2] = normal[2];
 		*/
+		
+		//float[] out = {normal[0],normal[1],normal[2]};
+		//return out;
 		return normalFix(normal);
 	}
 

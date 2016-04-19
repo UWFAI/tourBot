@@ -4,9 +4,9 @@ public class Controller {
 	create2_environment.Controller sim_con = null;
 	
 	IRobot bot;
-	Quadtree quadtree;
+	volatile Quadtree quadtree;
 	TabletComm tab;
-	Kinect kinect;
+	volatile Kinect kinect;
 	
 	boolean run = true;
 	
@@ -33,7 +33,68 @@ public class Controller {
 		window.scrollPane_Tree.getHorizontalScrollBar().setValue(2500-200);
 
 		tab = new TabletComm(this);
+		
+		new Thread( new Runnable() {
+            public void run() {
+            	//int i = 0;
+            	while(true) {
+            		keep_tree_updated();
+            		//if (i > 152) {
+            		//	i = 5;
+            			//quadtree.tree_fix(quadtree.root);
+            		//}
+            		 //if (i > kinect.distance_2d.length/2) i = 5;
+            	}
+            }
+        }).start();
+		
 		while (run) AI();
+	}
+	
+	public void keep_tree_updated() {
+		
+		int tree_bot_x = (int)bot_x+2500;
+		int tree_bot_y = (int)bot_y+2500;
+		
+		quadtree.set_circle( tree_bot_x, tree_bot_y, 12, "free");
+		
+		float[][] distance = kinect.distance_2d;
+		for(int i=0; i<500; i++) { 
+			if (distance[i][1] == 0)	
+				continue;
+			
+			int end_x = 0;
+			int end_y = 0;
+			int hit_end_x = 0;
+			int hit_end_y = 0;
+			
+			double ang = distance[i][0];
+			double dis = distance[i][1];
+			//kinect.distance_2d[i][0] = 0;
+			//kinect.distance_2d[i][1] = 0;
+			
+			double min_dis = 50;
+
+			int start_x = tree_bot_x;
+			int start_y = tree_bot_y;
+			
+			end_x = (int) (start_x + lengthdir_x(dis, bot_direction) + lengthdir_x(ang, -90));//
+			end_y = (int) (start_y + lengthdir_y(dis, bot_direction) + lengthdir_y(ang, -90));//
+			//quadtree.set_circle(end_x, end_y, 5, "hit");
+			
+			
+			quadtree.set_line(start_x, start_y, end_x, end_y, "free");
+			//hit_end_x = (int) (end_x+lengthdir_x(400, bot_direction-152/2+i));
+			//hit_end_y = (int) (end_y+lengthdir_y(400, bot_direction-152/2+i));
+			quadtree.set_circle(end_x, end_y, 2, "hit");
+			//quadtree.set_line(end_x, end_y, hit_end_x, hit_end_y, "hit");
+			
+		}
+		
+		quadtree.draw_bot_x = tree_bot_x;
+		quadtree.draw_bot_y = tree_bot_y;
+		
+		update_bot_point();
 	}
 	
 	public void update_bot_point() {
@@ -107,6 +168,9 @@ public class Controller {
 		int sp = window.get_speed();
 		int dr = window.get_direction();
 
+		bot.move(sp, dr);
+		window.set_speed(dr);
+		
 		/*
 		if (kinect.updated_skeleton>0){
 			kinect.updated_skeleton--;
@@ -133,49 +197,42 @@ public class Controller {
 			follow = false;
 		}
 		*/
-		if (follow) {
+		//if (follow) {
 			//sp = 10;
 			//dr = follow_direction;
-		}
+		//}
 		
 		//if (kinect.map != null) System.out.println(kinect.getFocalLengthX());	
 		//if (kinect.map != null) kinect.map.smooth();
-		
+		/*
 		String de = "";
 		for(int i=50; i<55; i++){
 			float d = kinect.get_pixel_depth(i, 0);
 			
 			de += (int)d + " ";
-			/*
+			
 			if (d != 0) {
 				System.out.println(
 						de+""
 						);
-			}*/
-		}
-		//System.out.println(de + "");
-		
-		window.set_speed(dr);
-		
-		//if (bump == 0) {
-			bot.move(sp, dr);
-			quadtree.set_circle( (int)bot_x+2500, (int)bot_y+2500, 12, "free");
-			//System.out.println(bot_x + ", " + bot_y);
-			update_bot_point();
-		//} 
-		/*
-		else {
-			quadtree.set_point((int) bot_x, (int) bot_y);
-			if (bump == 1 || bump == 2) {
-				state = "turn right";
-			} else if (bump == 4 || bump == 6) {
-				state = "turn left";
-			} else {
-				state = "reverse";
 			}
 		}*/
-	}
+		//System.out.println(de + "");
 
+
+		
+		//if (bump == 0) {
+
+
+	}
+	
+	public double lengthdir_x(double length, double direction) {
+		return Math.cos(Math.toRadians(direction))*length;
+	}
+	public double lengthdir_y(double length, double direction) {
+		return -Math.sin(Math.toRadians(direction))*length;
+	}
+	
 	// I know this should be at the top but it only applies to AI_state_reverse()
 	boolean reverse_start = false;
 	double reverse_start_x = 0;

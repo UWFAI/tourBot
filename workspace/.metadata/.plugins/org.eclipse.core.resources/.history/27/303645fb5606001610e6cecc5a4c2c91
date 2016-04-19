@@ -1,0 +1,620 @@
+
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.Vector;
+
+import edu.ufl.digitalworlds.j4k.DepthMap;
+import edu.ufl.digitalworlds.j4k.J4KSDK;
+import edu.ufl.digitalworlds.j4k.Skeleton;
+//import j4kdemo.kinectviewerapp.Kinect;
+
+
+public class Kinect extends J4KSDK {
+	public Controller con = null;
+	public int viewer_width = getDepthWidth();
+	public int viewer_height = getDepthHeight();
+
+	public int normal_number = 2;
+	public float[][][] normals = new float[640*480][normal_number][3];
+	public boolean[][] normal_range = new boolean[640*480][normal_number];
+	public int normal_index = 0;
+	
+	float[][] distance_2d = new float[5000][2];
+	int distance_2d_index = 0;
+	Skeleton[] skeletons;
+	DepthMap map = null;
+	
+	private int last_frame_index = 0;
+	public boolean skeleton_updated = false;
+	public boolean updated = false;
+	
+	public Kinect(Controller controller){
+		super();
+		this.con = controller;
+		
+		skeletons = new Skeleton[6];
+
+		skeletons[0] = new Skeleton();
+		skeletons[1] = new Skeleton();
+		skeletons[2] = new Skeleton();
+		skeletons[3] = new Skeleton();
+		skeletons[4] = new Skeleton();
+		skeletons[5] = new Skeleton();
+		this.
+		//start(J4KSDK.COLOR|J4KSDK.DEPTH|J4KSDK.SKELETON);
+		//start(J4KSDK.COLOR);
+		start(J4KSDK.DEPTH|J4KSDK.SKELETON|Kinect.UV|Kinect.XYZ|Kinect.PLAYER_INDEX);
+		
+		/*
+		for(int p=0; p<640*480; p++){
+			for(int a=0; a<normal_number; a++){
+				for(int i=0; i<3; i++){
+					normals[p][a][i] = 0;
+				}
+			}
+		}
+		*/
+	}
+	
+	@Override
+	public void onSkeletonFrameEvent(boolean[] flags, float[] positions, float[] orientations, byte[] state) {
+		last_frame_index = 0;
+		
+		for(int i=0; i<getSkeletonCountLimit(); i++){
+			skeletons[i] = Skeleton.getSkeleton(i, flags, positions, orientations, state, this);
+		}
+	}
+
+	@Override
+	public void onColorFrameEvent(byte[] color_frame) {
+		try {
+			con.window.set_kinectView(getImage(getColorWidth(), getColorHeight(), color_frame));
+		} catch (IOException e) {}
+	}
+
+	@Override
+	public void onDepthFrameEvent(short[] depth_frame, byte[] body_index, float[] xyz, float[] uv) {
+		
+		skeleton_updated = (last_frame_index == 0);
+		last_frame_index = 1;
+		updated = true;
+		
+		if (xyz != null)
+			map = new DepthMap(getDepthWidth(), getDepthHeight(), xyz);
+		
+		try {
+			
+			con.window.set_kinectView(getImage_depth(depth_frame));
+			
+		} catch (IOException e) {}
+		
+	}
+	
+	//////////////////////////////////////	
+	// skeletons 
+	//////////////////////////////////////
+
+	public void draw_skeletons(Graphics2D g, int width, int height) {
+		for(int i=0; i<getSkeletonCountLimit(); i++){
+			if (skeletons[i] != null) {
+				if (skeletons[i].isTracked() && skeleton_updated) {
+					int[] spine_base = skeletons[i].get2DJoint(Skeleton.SPINE_BASE, width, height);
+					int[] spine_mid = skeletons[i].get2DJoint(Skeleton.SPINE_MID, width, height);
+					int[] head = skeletons[i].get2DJoint(Skeleton.HEAD, width, height);
+					int[] neck = skeletons[i].get2DJoint(Skeleton.NECK, width, height);
+					int[] spine_shoulder = skeletons[i].get2DJoint(Skeleton.SPINE_SHOULDER, width, height);
+					
+					int[] shoulder_left = skeletons[i].get2DJoint(Skeleton.SHOULDER_LEFT, width, height);
+					int[] elbow_left = skeletons[i].get2DJoint(Skeleton.ELBOW_LEFT, width, height);
+					int[] wrist_left = skeletons[i].get2DJoint(Skeleton.WRIST_LEFT, width, height);
+					int[] hand_left = skeletons[i].get2DJoint(Skeleton.HAND_LEFT, width, height);
+					int[] hand_tip_left = skeletons[i].get2DJoint(Skeleton.HAND_TIP_LEFT, width, height);
+					int[] thumb_left = skeletons[i].get2DJoint(Skeleton.THUMB_LEFT, width, height);
+					
+					int[] shoulder_right = skeletons[i].get2DJoint(Skeleton.SHOULDER_RIGHT, width, height);
+					int[] elbow_right = skeletons[i].get2DJoint(Skeleton.ELBOW_RIGHT, width, height);
+					int[] wrist_right = skeletons[i].get2DJoint(Skeleton.WRIST_RIGHT, width, height);
+					int[] hand_right = skeletons[i].get2DJoint(Skeleton.HAND_RIGHT, width, height);
+					int[] hand_tip_right = skeletons[i].get2DJoint(Skeleton.HAND_TIP_RIGHT, width, height);
+					int[] thumb_right = skeletons[i].get2DJoint(Skeleton.THUMB_RIGHT, width, height);
+					
+					int[] hip_left = skeletons[i].get2DJoint(Skeleton.HIP_LEFT, width, height);
+					int[] knee_left = skeletons[i].get2DJoint(Skeleton.KNEE_LEFT, width, height);
+					int[] ankle_left = skeletons[i].get2DJoint(Skeleton.ANKLE_LEFT, width, height);
+					int[] foot_left = skeletons[i].get2DJoint(Skeleton.FOOT_LEFT, width, height);
+					
+					int[] hip_right = skeletons[i].get2DJoint(Skeleton.HIP_RIGHT, width, height);
+					int[] knee_right = skeletons[i].get2DJoint(Skeleton.KNEE_RIGHT, width, height);
+					int[] ankle_right = skeletons[i].get2DJoint(Skeleton.ANKLE_RIGHT, width, height);
+					int[] foot_right = skeletons[i].get2DJoint(Skeleton.FOOT_RIGHT, width, height);
+					
+					// spine stuff
+					drawLine(g, head, neck);
+					drawLine(g, neck, spine_shoulder);
+					drawLine(g, spine_shoulder, spine_mid);
+					drawLine(g, spine_mid, spine_base);
+					
+					// left arm
+					drawLine(g, spine_shoulder, shoulder_left);
+					drawLine(g, shoulder_left, elbow_left);
+					drawLine(g, elbow_left, wrist_left);
+					drawLine(g, wrist_left, hand_left);
+					drawLine(g, hand_left, hand_tip_left);
+					drawLine(g, hand_left, thumb_left);
+					
+					// right arm
+					drawLine(g, spine_shoulder, shoulder_right);
+					drawLine(g, shoulder_right, elbow_right);
+					drawLine(g, elbow_right, wrist_right);
+					drawLine(g, wrist_right, hand_right);
+					drawLine(g, hand_right, hand_tip_right);
+					drawLine(g, hand_right, thumb_right);
+					
+					// left leg
+					drawLine(g, spine_base, hip_left);
+					drawLine(g, hip_left, knee_left);
+					drawLine(g, knee_left, ankle_left);
+					drawLine(g, ankle_left, foot_left);
+					
+					// left leg
+					drawLine(g, spine_base, hip_right);
+					drawLine(g, hip_right, knee_right);
+					drawLine(g, knee_right, ankle_right);
+					drawLine(g, ankle_right, foot_right);
+					
+				}
+			}
+		}
+	}
+	
+	public void drawLine(Graphics2D g, int[] from, int[] to) {
+		g.setStroke(new BasicStroke(10));
+		g.drawLine(xFix(from[0]), from[1], xFix(to[0]), to[1]);
+	}
+	
+	public int xFix(int x){
+		int new_x = viewer_width*2-x;
+		return new_x;
+		
+	}
+	
+	public Integer[] get_skeletons_screen_x(){
+		Integer[] out_x = new Integer[getSkeletonCountLimit()];
+		
+		for(int i=0;i<getSkeletonCountLimit();i++){
+			if (skeletons[i] != null) {
+				if (skeletons[i].isTracked() && skeletons[i].getTimesDrawn() <= 10) {
+					int w = viewer_width;
+					double A = (skeletons[i].get2DJoint(3, viewer_width, viewer_height)[0]);
+					double B = A*(200.0/w)-100.0;
+					out_x[i] = (int) B;
+					
+	    			skeletons[i].increaseTimesDrawn();
+				} else {
+					out_x[i] = null;
+				}
+			} else {
+				out_x[i] = null;
+			}
+		}
+		
+		return out_x;
+	}
+	
+	//////////////////////////////////////
+	// depth 
+	//////////////////////////////////////
+	
+	public BufferedImage getImage_depth(short[] depth_frame) throws IOException {
+		int width = getDepthWidth();
+		int height = getDepthHeight();
+	
+		int[] frame = new int[width * height];
+		int i = 0;
+		for (int y = 0; y < getDepthHeight(); y++) {
+			for (int x = getDepthWidth()-1; x >= 0; x--) {
+				int value = ((int)depth_frame[y*getDepthWidth()+x])/32;
+				// if value > slider value is value = 0;
+				if(value < con.window.slider.getValue()) 
+					value = 0;
+				frame[i] = value;
+				i++;
+			}
+		}
+		
+	    BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+	    bufferedImage.getRaster().setDataElements(0, 0, width, height, frame);
+
+	    return bufferedImage;
+	}
+	
+	public float get_pixel_depth(int x, int y){
+		if (map != null)
+			return map.realZ[x];
+		return 0;
+	}
+	
+	
+	public void set_avg_normal(int index, float x, float y, float z){
+		/*
+		normals[index][0][0] = x;
+		normals[index][0][1] = y;
+		normals[index][0][2] = z;
+		*/
+		
+		normals[index][normal_index][0] = x;
+		normals[index][normal_index][1] = y;
+		normals[index][normal_index][2] = z;
+		
+	}
+	public float[] get_avg_normal(int index){
+		//int n = normal_number;
+		//float[] vec = {normals[index][0][0], normals[index][0][1], normals[index][0][2]};
+		//return vec;
+		
+		float x_avg = 0;
+		float y_avg = 0;
+		float z_avg = 0;
+		
+		int number = 0;
+		for(int i=0; i<normal_number; i++){
+			number++;
+			x_avg += normals[index][i][0];
+			y_avg += normals[index][i][1];
+			z_avg += normals[index][i][2];
+		}
+		int n = normal_number;
+		float[] vec = {x_avg/number, y_avg/number, z_avg/number};
+		return vec;
+		
+	}
+	public boolean allGood(int index) {
+		for(int i=0; i<normal_number; i++){
+			if (!normal_range[index][i]) return false;
+		}
+		return true;
+	}
+	
+	public void draw_depthImage(Graphics2D g, int w, int h) {
+		
+		int width = getDepthWidth();
+		int height = getDepthHeight();
+		
+		double max_angle = .5;
+		
+		int width_cut = 100;
+		int height_cut = 50;
+		
+		int skip = 5;
+		int p_size = skip*2;
+		
+		float[][] normals_dis = new float[(width)*(height)][3];
+		
+		//System.out.println(normals[500][0][0]+" "+normals[500][1][0]+" "+get_avg_normal(500)[0]);
+		for (int y = 0; y < height; y+=skip) {
+			for (int x = 0; x < width; x+=skip) {
+				
+				int index = y*getDepthWidth()+x;
+				
+				
+				set_avg_normal(index, map.realX[index], map.realY[index], map.realZ[index]);
+
+				if (x != width-skip && y != height-skip) {
+					
+					float[] x1 = get_avg_normal(index);
+					float[] x2 = get_avg_normal(index+skip);
+					float[] x3 = get_avg_normal(index+width*skip);
+					
+					/*
+					float[] x1 = {map.realX[index], map.realY[index], map.realZ[index]};
+					float[] x2 = {map.realX[index+skip], map.realY[index+skip], map.realZ[index+skip]};
+					float[] x3 = {map.realX[index+width*skip], map.realY[index+width*skip], map.realZ[index+width*skip]};
+					*/
+					normals_dis[index] = normalizedNormalOf(x1, x2, x3);
+				}
+				
+				if (x == width-1) {
+					float[] none = {1,1,1};
+					normals_dis[index] = none;
+				}
+			}
+		}
+		for (int y = height_cut; y < height-height_cut; y+=skip) {
+			for (int x = width_cut; x < width-width_cut; x+=skip) {
+				
+				int index = y*getDepthWidth()+x;
+				
+				boolean valid = map.validDepthAt(index);
+				
+				float depth = (float) (map.realZ[index]*5000.0);
+				
+				int scale = (int) (map.realZ[index]*100);//(int)((map.realZ[index]*100.0));
+				
+				//int value_x = (int) (map.realX[index]*scale);
+				//int value_y = (int) (map.realY[index]*scale);
+				float value_x = (map.realX[index]*scale);
+				float value_y = (map.realY[index]*scale);
+				
+				if (depth > 2500){ depth -= 2500; }
+				
+				float x_vec = normals_dis[index][0];
+				float y_vec = normals_dis[index][2];
+				float z_vec = normals_dis[index][1];
+				
+				float x_dis = Math.abs(x_vec);
+				float y_dis = Math.abs(y_vec);
+				float z_dis = Math.abs(z_vec);
+				
+				boolean good = false;
+				if (nnrng(normals_dis, index, (float) max_angle)) {
+					good = true;
+				}
+				
+				float _r = 1-(((x_vec+1)/2) % 1);
+				float _g = 1-(((y_vec+1)/2) % 1);
+				float _b = 1-(((z_vec+1)/2) % 1);
+				
+				Color c = new Color(_r, _g, _b);
+				//Color c = Color.getHSBColor((float)(depth/15000.0),1,1); // keep!!!
+				g.setColor(c);
+				
+				//if (good) //valid && 
+				if(valid && allGood(index))
+					g.fillRect((int)(((width-x)*2.0+value_x)), (int)(y*2.0-value_y), p_size, p_size);
+				//g.fillRect((int)(((width-x)*2.0+value_x)), (int)(y*2.0-value_y), p_size, p_size);
+			}
+		}
+		
+
+		normal_index++;// = (normal_index+1) % (normal_number);
+		if (normal_index >= normal_number) normal_index = 0;
+		
+	}
+
+	public void draw_depthImage_2d(Graphics2D g, int w, int h) {
+		
+		int width = getDepthWidth();
+		int height = getDepthHeight();
+		
+		double max_angle = .5;
+		
+		int width_cut = 100;
+		int height_cut = 50;
+		
+		int skip = 2;
+		
+		int p_size = skip*2;
+		
+		float[][] normals_dis = new float[(width)*(height)][3];
+		
+		for (int y = 0; y < height; y+=skip) {
+			for (int x = width_cut; x < width-width_cut; x+=1) {
+				
+				int index = y*getDepthWidth()+x;
+				
+				set_avg_normal(index, map.realX[index], map.realY[index], map.realZ[index]);
+
+				if (x != width-skip && y != height-skip) {
+					
+					float[] x1 = get_avg_normal(index);
+					float[] x2 = get_avg_normal(index+skip);
+					float[] x3 = get_avg_normal(index+width*skip);
+					
+					normals_dis[index] = normalizedNormalOf(x1, x2, x3);
+				}
+				
+				if (x == width-1) {
+					float[] none = {1,1,1};
+					normals_dis[index] = none;
+				}
+			}
+		}
+		
+		int dis_index = 0;
+		
+		int x_number = width-width_cut;// 152;//
+		for (int x = width_cut; x < width-width_cut; x+=1) {
+			//for (int y = height-height_cut; y >= height_cut ; y-=skip) {
+			//float min_depth = 99999;
+			//float min_value_x = 0;
+			
+			for (int y = height-height_cut; y >= height_cut ; y-=skip) {
+			//for (int y = height_cut; y < height-height_cut; y+=skip) {
+				
+				int index = y*getDepthWidth()+x;
+				boolean valid = map.validDepthAt(index);
+				
+				
+				float scale = (float) ((map.realZ[index])*1.238*100);
+				float value_x = (map.realX[index]*scale);
+				float value_z = (map.realZ[index]*scale);
+				
+				
+				//int value_y = (int) (map.realY[index]*scale);
+				
+				float x_vec = normals_dis[index][0];
+				float y_vec = normals_dis[index][2];
+				float z_vec = normals_dis[index][1];
+				
+				nnrng(normals_dis, index, (float) max_angle);
+				
+				float _r = 1-(((x_vec+1)/2) % 1);
+				float _g = 1-(((y_vec+1)/2) % 1);
+				float _b = 1-(((z_vec+1)/2) % 1);
+				
+				Color c = new Color(_r, _g, _b);
+				g.setColor(c);
+				
+				if(valid && allGood(index)){
+					//min_depth = value_z;
+					//min_value_x = value_x;
+					float distance = (float) ((height*2.0)-value_z);
+					g.fillRect((int)( (width*1.5-x)+value_x)+width/2, (int) distance-50, p_size, p_size);
+					//if (dis_index < 152){
+						distance_2d[dis_index][0] = value_x;
+						distance_2d[dis_index][1] = value_z;
+						dis_index++;
+					//}
+					break;
+					//counter--;
+					//if (counter <= 0) break;
+				}
+			}
+			//g.fillRect((int)(((width-x)*2+min_value_x))+1, (int) ((height*2)-(min_depth))+1, p_size, p_size);
+		}
+		/*
+		String dis_string = "";
+		for(int i=0; i<152; i++) { dis_string += distance_2d[i][0]+"\t"; }
+		con.window.textArea.setText(dis_string);
+		 */
+		normal_index++;// = (normal_index+1) % (normal_number);
+		if (normal_index >= normal_number) normal_index = 0;
+		
+	}
+	
+	boolean nnrng(float[][] normals, int index, float range) {
+		
+		int n1 = 1;//
+		int n2 = 1;
+		
+		boolean u = true; // up
+		boolean d = true; // down
+		boolean l = true; // left
+		boolean r = true; // right
+		
+		boolean ul = true; // left
+		boolean ur = true; // right
+		boolean dl = true; // left
+		boolean dr = true; // right
+		
+		boolean c = true; // current
+		
+		// up
+		if (index > getDepthWidth()) {
+			int u_index = index-getDepthWidth();
+			u = (normals[u_index][n1] < range && normals[u_index][n2] < range);
+		}
+		
+		// up left
+		if (index > getDepthWidth()) {
+			int ul_index = index-getDepthWidth()-1;
+			ul = (normals[ul_index][n1] < range && normals[ul_index][n2] < range);
+		}
+		
+		// up right
+		if (index > getDepthWidth()) {
+			int ur_index = index-getDepthWidth()+1;
+			ur = (normals[ur_index][n1] < range && normals[ur_index][n2] < range);
+		}
+		
+		// down
+		if (index < (getDepthHeight()-1)*getDepthWidth()) {
+			int d_index = index+getDepthWidth();
+			d = (normals[d_index][n1] < range && normals[d_index][n2] < range);
+		}
+		// down left
+		if (index < (getDepthHeight()-1)*getDepthWidth()) {
+			int dl_index = index+getDepthWidth()-1;
+			d = (normals[dl_index][n1] < range && normals[dl_index][n2] < range);
+		}
+		// down right
+		if (index < (getDepthHeight()-1)*getDepthWidth()-1) {
+			int dr_index = index+getDepthWidth()+1;
+			d = (normals[dr_index][n1] < range && normals[dr_index][n2] < range);
+		}
+		
+		// left
+		if (index != 0) {
+			int l_index = index-1;
+			l = (normals[l_index][n1] < range && normals[l_index][n2] < range);
+		}
+		
+		// right
+		if (index != getDepthHeight()*getDepthWidth()-1 ) {
+			int r_index = index+1;
+			r = (normals[r_index][n1] < range && normals[r_index][n2] < range);
+		}
+		
+		// Current
+		int c_index = index;
+		c = (normals[c_index][n1] < range && normals[c_index][n2] < range);
+		
+		boolean good = (u && d && l && r && c && ul && ur && dl && dr);
+		
+		normal_range[c_index][normal_index] = good;
+		
+		return good;
+	}
+	
+	float dot(float[] n1, float[] n2) {
+		if (n1.length != n2.length) return 0;
+		int sum = 0;
+		for (int i=0; i<n1.length; i++) {
+			sum += n1[i] * n2[i]; 
+		}
+		return sum;
+	}
+	 
+	//////////////////////////////////////
+	// color image 
+	//////////////////////////////////////
+	
+	public BufferedImage getImage(int width, int height, byte[] bytes) throws IOException {
+	    int[] shifted = new int[width * height];
+
+	    // (byte) bgra to rgb (int)
+	    for (int i = 0, j = 0; i < bytes.length; i = i + 4, j++) {
+	        int b, g, r;
+
+	        b = bytes[i] & 0xFF;
+	        g = bytes[i + 1] & 0xFF;
+	        r = bytes[i + 2] & 0xFF;
+
+	        shifted[j] = (r << 16) | (g << 8) | b;
+	    }
+
+	    BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+	    bufferedImage.getRaster().setDataElements(0, 0, width, height, shifted);
+
+	    return bufferedImage;
+	}
+	
+	public float[] normalizedNormalOf(float[] point1, float[] point2, float[] point3) {
+		float[] normal = new float[3];
+		normal[0] = (point2[1] - point1[1])*(point3[2] - point1[2]) - (point2[2] - point1[2])*(point3[1] - point1[1]);
+		normal[1] = (point2[2] - point1[2])*(point3[0] - point1[0]) - (point2[0] - point1[0])*(point3[2] - point1[2]);
+		normal[2] = (point2[0] - point1[0])*(point3[1] - point1[1]) - (point2[1] - point1[1])*(point3[0] - point1[0]);
+		
+		float L = (float) Math.sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+		if (L > 0){
+			normal[0] /= L;
+			normal[1] /= L;
+			normal[2] /= L;
+		}
+		/*
+		normal[0] = normal[0];
+		normal[1] = normal[1];
+		normal[2] = normal[2];
+		*/
+		
+		//float[] out = {normal[0],normal[1],normal[2]};
+		//return out;
+		return normalFix(normal);
+	}
+
+	public float[] normalFix(float[] normals) {
+		
+		double angle = (double) Math.toRadians(con.window.slider.getValue());
+		float[] out = {0,0,0};
+		
+		out[0] = normals[0];
+		out[1] = (float) (normals[1]*Math.cos(angle) + normals[2]*Math.sin(angle)*-1);
+		out[2] = (float) (normals[1]*Math.sin(angle) + normals[2]*Math.cos(angle));
+		
+		return out;
+	}
+}
