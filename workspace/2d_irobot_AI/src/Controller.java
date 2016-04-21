@@ -36,14 +36,8 @@ public class Controller {
 		
 		new Thread( new Runnable() {
             public void run() {
-            	//int i = 0;
             	while(true) {
             		keep_tree_updated();
-            		//if (i > 152) {
-            		//	i = 5;
-            			//quadtree.tree_fix(quadtree.root);
-            		//}
-            		 //if (i > kinect.distance_2d.length/2) i = 5;
             	}
             }
         }).start();
@@ -52,7 +46,6 @@ public class Controller {
 	}
 	
 	public void keep_tree_updated() {
-		
 		int tree_bot_x = (int)bot_x+2500;
 		int tree_bot_y = (int)bot_y+2500;
 		
@@ -76,6 +69,7 @@ public class Controller {
 			double min_dis = 50;
 
 			int start_x = tree_bot_x;
+			
 			int start_y = tree_bot_y;
 			
 			end_x = (int) (start_x + lengthdir_x(dis, bot_direction) + lengthdir_x(ang, -90));//

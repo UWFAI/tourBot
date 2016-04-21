@@ -23,7 +23,7 @@ public class Kinect extends J4KSDK {
 	public boolean[][] normal_range = new boolean[640*480][normal_number];
 	public int normal_index = 0;
 	
-	float[][] distance_2d = new float[500][2];
+	float[][] distance_2d = new float[1000][2];
 	float[] distance_2d_count = new float[640*480];
 	Skeleton[] skeletons;
 	DepthMap map = null;
@@ -168,7 +168,16 @@ public class Kinect extends J4KSDK {
 	}
 	
 	public int xFix(int x){
-		int new_x = viewer_width*2-x;
+		//int new_x = viewer_width*2-x;
+		int new_x = 1024-x;//
+		float myfloat;	
+		
+		if (new_x <= 512){	
+			new_x += (512-new_x)/5;
+		}else{			
+			new_x -= (new_x-512)/5;
+		}
+		
 		return new_x;
 		
 	}
@@ -270,7 +279,7 @@ public class Kinect extends J4KSDK {
 		return true;
 	}
 	
-	public void draw_depthImage(Graphics2D g, int w, int h) {
+	public void draw_depthImage(Graphics2D g_3d, Graphics2D g_2d, int w, int h) {
 		
 		int width = getDepthWidth();
 		int height = getDepthHeight();
@@ -280,17 +289,15 @@ public class Kinect extends J4KSDK {
 		int width_cut = 100;
 		int height_cut = 50;
 		
-		int skip = 5;
-		int p_size = skip*2;
+		int skip = 3;
+		int p_size = (skip*2);
 		
-		float[][] normals_dis = new float[(width)*(height)][3];
+		float[][] normals_dis = new float[width*height][3];
 		
-		//System.out.println(normals[500][0][0]+" "+normals[500][1][0]+" "+get_avg_normal(500)[0]);
-		for (int y = 0; y < height; y+=skip) {
-			for (int x = 0; x < width; x+=skip) {
+		for (int y = 0; y < height; y += skip) {
+			for (int x = width_cut; x < width-width_cut; x += skip) { // +1?
 				
 				int index = y*getDepthWidth()+x;
-				
 				
 				set_avg_normal(index, map.realX[index], map.realY[index], map.realZ[index]);
 
@@ -300,63 +307,64 @@ public class Kinect extends J4KSDK {
 					float[] x2 = get_avg_normal(index+skip);
 					float[] x3 = get_avg_normal(index+width*skip);
 					
-					/*
-					float[] x1 = {map.realX[index], map.realY[index], map.realZ[index]};
-					float[] x2 = {map.realX[index+skip], map.realY[index+skip], map.realZ[index+skip]};
-					float[] x3 = {map.realX[index+width*skip], map.realY[index+width*skip], map.realZ[index+width*skip]};
-					*/
 					normals_dis[index] = normalizedNormalOf(x1, x2, x3);
-				}
-				
-				if (x == width-1) {
-					float[] none = {1,1,1};
-					normals_dis[index] = none;
 				}
 			}
 		}
-		for (int y = height_cut; y < height-height_cut; y+=skip) {
-			for (int x = width_cut; x < width-width_cut; x+=skip) {
+		
+		for (int x = width_cut; x < width-width_cut; x+=skip) {
+			distance_2d[x][1] = 0;
+			for (int y = height-height_cut; y >= height_cut ; y-=skip) {
 				
 				int index = y*getDepthWidth()+x;
-				
 				boolean valid = map.validDepthAt(index);
 				
-				float depth = (float) (map.realZ[index]*5000.0);
-				
-				int scale = (int) (map.realZ[index]*100);//(int)((map.realZ[index]*100.0));
-				
-				//int value_x = (int) (map.realX[index]*scale);
-				//int value_y = (int) (map.realY[index]*scale);
-				float value_x = (map.realX[index]*scale);
-				float value_y = (map.realY[index]*scale);
-				
-				if (depth > 2500){ depth -= 2500; }
-				
+				//We were scaling it twice, it didn't need any modification, just magnification
+				float value_z = (float) (map.realZ[index] );
+				float value_x = (float) (map.realX[index] );
+				float value_y = (float) (map.realY[index] );//* 100.0
+
 				float x_vec = normals_dis[index][0];
 				float y_vec = normals_dis[index][2];
 				float z_vec = normals_dis[index][1];
 				
-				float x_dis = Math.abs(x_vec);
-				float y_dis = Math.abs(y_vec);
-				float z_dis = Math.abs(z_vec);
-				
-				boolean good = false;
-				if (nnrng(normals_dis, index, (float) max_angle)) {
-					good = true;
-				}
+				nnrng(normals_dis, index, (float) max_angle);
 				
 				float _r = 1-(((x_vec+1)/2) % 1);
 				float _g = 1-(((y_vec+1)/2) % 1);
 				float _b = 1-(((z_vec+1)/2) % 1);
 				
-				Color c = new Color(_r, _g, _b);
-				//Color c = Color.getHSBColor((float)(depth/15000.0),1,1); // keep!!!
-				g.setColor(c);
 				
-				//if (good) //valid && 
-				if(valid && allGood(index))
-					g.fillRect((int)(((width-x)*2.0+value_x)), (int)(y*2.0-value_y), p_size, p_size);
-				//g.fillRect((int)(((width-x)*2.0+value_x)), (int)(y*2.0-value_y), p_size, p_size);
+				if(valid ){//&& allGood(index)
+				//if (true){
+					distance_2d_count[index]++;
+					
+					// 3d draw
+					if (g_3d != null) {
+						g_3d.setColor(Color.getHSBColor((float)(map.realZ[index]/6.0),1,1));
+						g_3d.fillRect((int)(((width-x)*2.0+value_x)), (int)(y*2.0-value_y), p_size, p_size);
+					}
+					value_x *= 100;
+					value_z *= 100;
+					
+					// 2d draw
+					if (g_2d != null) {
+						g_2d.setColor(Color.getHSBColor((float)(map.realZ[index]/6.0),1,1));
+						g_2d.fillRect(
+								(int) (width*1.5+value_x), 
+								(int) (height*2.0-value_z), 
+								p_size, p_size);
+					}
+					
+					if (distance_2d_count[index] >= 5){
+						if (distance_2d[x][1] == 0 || distance_2d[x][1] > value_z){
+							distance_2d[x][0] = value_x;
+							distance_2d[x][1] = value_z;
+						}
+					}
+				} else {
+					distance_2d_count[index] = 0;
+				}
 			}
 		}
 		
@@ -373,7 +381,7 @@ public class Kinect extends J4KSDK {
 		
 		double max_angle = .5;
 		
-		int width_cut = 100;
+		int width_cut = 100;//100;
 		int height_cut = 50;
 		
 		int skip = 2;
@@ -408,10 +416,10 @@ public class Kinect extends J4KSDK {
 				boolean valid = map.validDepthAt(index);
 				
 				
-				float scale = (float) ((map.realZ[index])*1.238*100);
-				float value_x = (map.realX[index]*scale);
-				float value_z = (map.realZ[index]*scale);
-				
+				//We were scaling it twice, it didn't need any modification, just magnification
+				float value_z = (float) (map.realZ[index]* 100.0);
+				float value_x = (float) (map.realX[index]* 100.0);
+
 				float x_vec = normals_dis[index][0];
 				float y_vec = normals_dis[index][2];
 				float z_vec = normals_dis[index][1];
@@ -422,14 +430,22 @@ public class Kinect extends J4KSDK {
 				float _g = 1-(((y_vec+1)/2) % 1);
 				float _b = 1-(((z_vec+1)/2) % 1);
 				
-				Color c = new Color(_r, _g, _b);
+				
+				Color c = Color.getHSBColor((float)(map.realZ[index]/6.0),1,1);
+				
+				//Color c = new Color(_r, _g, _b);
 				g.setColor(c);
 				
 				if(valid && allGood(index)){
 					distance_2d_count[index]++;
 					
-					float distance = (float) ((height*2.0)-value_z);
-					g.fillRect((int)( (width*1.5-x)+value_x)+width/2, (int) distance, p_size, p_size);
+					//g.fillRect((int)( (width*1.5-x)+value_x)+width/2, (int) distance, p_size, p_size);
+					
+					//float distance = (float) (height*2.0-value_z);
+					g.fillRect(
+							(int) (width*1.5+value_x), 
+							(int) (height*2.0-value_z), 
+							p_size, p_size);
 
 					if (distance_2d_count[index] >= 5){
 						if (distance_2d[x][1] == 0 || distance_2d[x][1] > value_z){
@@ -583,9 +599,9 @@ public class Kinect extends J4KSDK {
 		double angle = (double) Math.toRadians(con.window.slider.getValue());
 		float[] out = {0,0,0};
 		
-		out[0] = normals[0];
-		out[1] = (float) (normals[1]*Math.cos(angle) + normals[2]*Math.sin(angle)*-1);
-		out[2] = (float) (normals[1]*Math.sin(angle) + normals[2]*Math.cos(angle));
+		out[0] = Math.abs(normals[0]);
+		out[1] = (float) Math.abs((normals[1]*Math.cos(angle) + normals[2]*Math.sin(angle)*-1));
+		out[2] = (float) Math.abs((normals[1]*Math.sin(angle) + normals[2]*Math.cos(angle)));
 		
 		return out;
 	}

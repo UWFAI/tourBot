@@ -124,7 +124,8 @@ public class DebugWindow extends JFrame {
 	private JTextField msgTextField;
 	public JTextArea tabletTextArea;
 	public volatile BufferedImage tab_image = null;
-	public volatile BufferedImage kinect_image = null;
+	public volatile BufferedImage kinect_image_3d = null;
+	public volatile BufferedImage kinect_image_2d = null;
 	public volatile BufferedImage main_kinect_image = null;
 	public volatile int kinect_image_drawn = 0;
 	public volatile boolean clear = true;
@@ -138,24 +139,42 @@ public class DebugWindow extends JFrame {
 			// update kinect image
 			int kinect_width = con.kinect.getDepthWidth();
 			int kinect_height = con.kinect.getDepthHeight();
-
+			
 			if (con.kinect.updated){
 				
-				kinect_image = new BufferedImage(Math.max(kinect_width*4, 1), Math.max(kinect_height*2, 1), BufferedImage.TYPE_INT_RGB);
-				Graphics2D bg2 = (Graphics2D) kinect_image.getGraphics();
+		
+				// 3d stuff
+				kinect_image_3d = new BufferedImage(Math.max(kinect_width*4, 1), Math.max(kinect_height*2, 1), BufferedImage.TYPE_INT_RGB);
+				Graphics2D g3d = (Graphics2D) kinect_image_3d.getGraphics();
 				
-				//con.kinect.draw_depthImage(bg2, kinect_width, kinect_height);
-				con.kinect.draw_depthImage_2d(bg2, kinect_width, kinect_height);
-				//bg2.setColor(Color.WHITE);
-				//con.kinect.draw_skeletons(bg2, (int)(kinect_width*2), kinect_height*2);
-			
-				con.tab.sendImg(kinect_image);
+				// 2d stuff
+				kinect_image_2d = new BufferedImage(Math.max(kinect_width*4, 1), Math.max(kinect_height*2, 1), BufferedImage.TYPE_INT_RGB);
+				Graphics2D g2d = (Graphics2D) kinect_image_2d.getGraphics();
+				
+				//
+				con.kinect.draw_depthImage(g3d, g2d, kinect_width, kinect_height);
+				g3d.setColor(Color.white);
+				con.kinect.draw_skeletons(g3d, 512*2, 424*2);
+				
+				// 
+				
+				if (con.tab.imgType.equals("skeleton")){
+					con.tab.sendImg(kinect_image_3d);
+				}
+				if (con.tab.imgType.equals("kinect")){
+					con.tab.sendImg(kinect_image_2d);
+				}
+				
 				con.kinect.updated = false;
 				
+				//
 				clear = false;
 				main_kinect_image = new BufferedImage(Math.max(kinect_width*4, 1), Math.max(kinect_height*2, 1), BufferedImage.TYPE_INT_RGB);
-				bg2 = (Graphics2D) main_kinect_image.getGraphics();
-				bg2.drawImage(kinect_image, 0, 0, null);
+				g2d = (Graphics2D) main_kinect_image.getGraphics();
+				g2d.drawImage(kinect_image_2d, 0, 0, null);
+				//g2d.dispose();
+				
+				
 				clear = true;
 			}
 			
@@ -572,6 +591,10 @@ public class DebugWindow extends JFrame {
 		);
 		
 		JButton button_1 = new JButton("Connect");
+		button_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+			}
+		});
 		GroupLayout gl_panel_1 = new GroupLayout(panel_1);
 		gl_panel_1.setHorizontalGroup(
 			gl_panel_1.createParallelGroup(Alignment.LEADING)

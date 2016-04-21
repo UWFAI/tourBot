@@ -3,8 +3,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Line2D;
+import java.nio.ByteBuffer;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Quadtree {
 	
@@ -21,6 +24,8 @@ public class Quadtree {
 	// if we are to do this we need to send a point every step and not just at the 
 	// time of a hit
 	boolean complete = true;
+	
+	public static List<Byte> byteList = new ArrayList<Byte>();
 	
 	// 
 	public Quadtree(Controller con, int x1, int y1, int x2, int y2){
@@ -282,9 +287,10 @@ public class Quadtree {
 	private void draw_node(Node node, Graphics2D g2){
 
 		// fill
-		if (node.state == "not checked"){g2.setColor(Color.WHITE);}else
-		if (node.state == "free"){g2.setColor(Color.GREEN);}else
-		if (node.state == "hit") {g2.setColor(Color.RED);}else{g2.setColor(Color.YELLOW);}
+		if (node.state == "not checked") {g2.setColor(Color.WHITE);} else
+		if (node.state == "free"){g2.setColor(Color.GREEN);} else
+		if (node.state == "hit") {g2.setColor(Color.RED);} else 
+			{g2.setColor(Color.YELLOW);}
 		
 		if (node.state == "hit" || node.state == "free")
 			g2.fillRect(node.x1, node.y1, node.x2-node.x1, node.y2-node.y1);
@@ -298,6 +304,102 @@ public class Quadtree {
 		if (node.DL != null) draw_node(node.DL, g2);
 		if (node.DR != null) draw_node(node.DR, g2);
 	}	
+	
+	
+	  public void send_Quadtree(){
+		  byteList.clear();
+		  
+		  //first byte is to tell the tablet this is a quadtree
+		  byteList.add((byte) 85); //this is to inform tablet that this is a quadtree 
+		  
+		  byte [] bot_x = ByteBuffer.allocate(8).putDouble(controller.bot_x + 2500).array();
+		  byte [] bot_y = ByteBuffer.allocate(8).putDouble(controller.bot_y + 2500).array();
+		  
+		  //Bytes 1-8 are a double of the x coordinate
+		  for (byte b : bot_x){
+			  byteList.add(b);
+		  }
+		  
+		  //Bytes 9-16 are a double of the y coordinate 
+		  for (byte b : bot_y){
+			  byteList.add(b);
+		  }
+		  
+		  //add quadtree nodes
+		  encode_Quadtree(root);
+		  
+		  
+		  Byte[] Bquadtree = byteList.toArray(new Byte[byteList.size()]);
+		  
+		  
+		      byte[] quadtree = new byte[Bquadtree.length];
+
+		      for(int i = 0; i < Bquadtree.length; i++) {
+		          quadtree[i] = Bquadtree[i];
+		      }
+
+		    
+		  
+		  System.out.println("byte array size" + Integer.toString(quadtree.length));
+		  
+		  controller.tab.sendTree(quadtree);
+	  }
+	  
+	  
+	  private void encode_Quadtree(Node node){
+
+		  boolean children = false;
+		  //Set byte to 00000000 initially for unchecked node
+	      Byte nodeByte = 0;
+	      
+	      //1st bit is true if has children.
+	      if (node.UL != null || node.UR != null || node.DL != null || node.DR != null){
+	    	  nodeByte = (byte) (nodeByte | (1 << 0));
+	    	  children = true;
+	      }
+	  		
+	      
+	      if (node.state == "free"){
+	        nodeByte = (byte) (nodeByte | (1 << 1));  
+	        // make 4th bit 1
+	        
+	      } else if (node.state == "hit"){
+	        nodeByte = (byte) (nodeByte | (1 << 1)); 
+	        nodeByte = (byte) (nodeByte | (1 << 2)); 
+
+	        // make 4th and 5th bit 1
+	      }
+
+	      
+	      byteList.add(nodeByte);
+	      
+	      if (children){
+	    	  if (node.UL != null) {
+	    		  encode_Quadtree(node.UL);
+	    	  } else{
+	    		  byteList.add((byte)0);
+	    	  }
+	      
+	    	  if (node.UR != null){
+	  				encode_Quadtree(node.UR);
+	  		  }else{
+		    	  byteList.add((byte)0);
+	  			}
+	  		
+	  		  if (node.DL != null) {
+	  				encode_Quadtree(node.DL);
+	  		  }else{
+		    	  byteList.add((byte)0);
+	  		  }
+	  		
+	  		  if (node.DR != null){
+	  			encode_Quadtree(node.DR);
+	  		  }else{
+		    	  byteList.add((byte)0);
+		      }
+	      }
+	  }
+	
 	
 	//
 	private class Node {

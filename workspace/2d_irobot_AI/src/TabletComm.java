@@ -1,6 +1,7 @@
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.awt.image.IndexColorModel;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -61,6 +62,15 @@ public class TabletComm {
 	
 	private static boolean sendingImg = false;
 	
+	private static boolean treeView = false;
+	private static boolean kinectView = true;
+	
+	public static String imgType = "kinect";
+	
+	
+	
+	
+	
 	
 	/**
 	* <h2>Connection - Default Constructor</h2>
@@ -70,7 +80,7 @@ public class TabletComm {
 	public TabletComm (Controller con){
 		this.con = con;	
 		
-
+		
 		
 		//Start new thread for tablet communication
 				new Thread( new Runnable() {
@@ -255,12 +265,44 @@ public class TabletComm {
 	            scannerLine = sc.nextLine();
 
 	            if (scannerLine.contains("#!#")){
-
+	            	//Received image
 	            sendingImg = false;
 
-	            }else
-
-	            {
+	            }else if (scannerLine.contains("#@#")){
+	            	//treeView Mode
+	            	
+	            	logInfo("Quadtree Mode");
+	            	sendingImg = false;
+	            	treeView = true;
+	            	kinectView = false;
+	            	treeMode();	            	
+	            
+	            }else if (scannerLine.contains("#$#")){
+	            	//kinectView Mode
+	            	treeView = false;
+	            	sendingImg = false;
+	            	kinectView = true;
+	            	imgType = "kinect";
+	            	            	
+	            
+	            }else if (scannerLine.contains("#&#")){
+	            	//msgView Mode
+	            	
+	            	sendingImg = true;
+	            	treeView = false;
+	            	kinectView = false;
+	            		            	
+	            
+	            }else if (scannerLine.contains("#%#")){
+	            	//skelView Mode
+	            	
+	            	sendingImg = false;
+	            	treeView = false;
+	            	kinectView = true;
+	            	imgType = "skeleton";
+	            		            	
+	            
+	            }else {
 
 	            outputText = DateFormat.getDateTimeInstance(DateFormat.SHORT, 
 
@@ -268,7 +310,7 @@ public class TabletComm {
 
 	            //System.out.println(scannerLine);
 
-	            con.window.tabletTextArea.append(scannerLine);
+	            con.window.tabletTextArea.append(outputText);
 
 	            }
 
@@ -340,18 +382,27 @@ public class TabletComm {
 
 		new Thread( new Runnable() {
             public void run() {
-		if (imgConnected == true && sendingImg == false){
+		if (imgConnected == true && sendingImg == false && kinectView == true){
 			try{
 				sendingImg = true;
+				BufferedImage cropped;
+				BufferedImage tab_image;
+				if (imgType.equals("skeleton")){
+					 cropped = img.getSubimage(180, 80, img.getWidth()-1300, img.getHeight()-150);
+					 tab_image = new BufferedImage(320, 240, BufferedImage.TYPE_USHORT_555_RGB);
+				}else{
+					 cropped = img.getSubimage(400, 0, img.getWidth()-1300, img.getHeight());
+					 tab_image = new BufferedImage(240, 320, BufferedImage.TYPE_USHORT_555_RGB);
+				}
 				
-			
-				BufferedImage tab_image = new BufferedImage(320, 240, BufferedImage.TYPE_INT_RGB);
 				Graphics2D tg2 = (Graphics2D) tab_image.getGraphics();
-				tg2.drawImage(img, 0, 0, tab_image.getWidth(), tab_image.getHeight(), null);
+				tg2.drawImage(cropped, 0, 0, tab_image.getWidth(), tab_image.getHeight(), null);
 				tg2.dispose();
 				
 			File outputfile = new File("image.jpg");
 			ImageIO.write(tab_image, "jpg", outputfile);
+			
+			
 			
 			
 			/*
@@ -406,7 +457,7 @@ public class TabletComm {
 	        */
 	        //sendingImg = false;
 			
-	        //logInfo("Image sent and data output stream flused");
+	        //logInfo("Image sent and data output stream flushed");
 			} catch (IOException e){
 				logInfo("IOException occured :(");
 			}
@@ -416,6 +467,22 @@ public class TabletComm {
 			//con.window.tabletTextArea.append("Tablet not connected.\n");
 		}
             }}).start();
+		
+	}
+	
+	public void sendTree(final byte[] tree){
+		
+		
+		if (imgConnected == true && sendingImg == false && treeView == true){
+		try{
+		oos = new ObjectOutputStream(imgSocket.getOutputStream()); 	        	
+        logInfo("Sending tree to tablet");
+        oos.writeObject(tree);
+        oos.flush();
+		} catch (Exception e){
+			
+		}
+		}
 		
 	}
 	
@@ -480,6 +547,26 @@ public class TabletComm {
 	private void getLocation(){
 		sendMsg("");	
 		
+	}
+	
+	private void treeMode(){
+		
+		new Thread( new Runnable() {
+            public void run() {
+            	
+            	while (treeView == true){
+            		logInfo("Quadtree loop");
+            	try{
+            		con.quadtree.send_Quadtree();
+            		Thread.sleep(1000);
+            		
+            	}catch (Exception e){
+            		
+            	}
+            	
+            	}
+            	
+            }}).start();
 	}
 
 }
