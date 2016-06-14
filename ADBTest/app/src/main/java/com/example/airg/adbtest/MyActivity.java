@@ -3,6 +3,10 @@ package com.example.airg.adbtest;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -46,6 +50,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.util.Scanner;
 
@@ -55,24 +60,26 @@ import java.net.ServerSocket;
 public class MyActivity extends AppCompatActivity {
 
     public static final String TAG = "Connection";
-    public static final int TIMEOUT=10;
+    public static final int TIMEOUT = 10;
     private static Bitmap image;
     private static int height;
     private static int width;
     String msg = "";
-    Intent i=null;
-    TextView tv=null;
-    Button btn= null;
-    EditText edt= null;
+    Intent i = null;
+    TextView tv = null;
+    Button btn = null;
+    EditText edt = null;
     ImageView imgV = null;
     Button vk = null;
     Button vm = null;
+    Button vq = null;
+    Button vs = null;
     FrameLayout fl = null;
-    private String connectionStatus=null;
-    private Handler mHandler=null;
-    private Handler tHandler=null;
-    private Handler iHandler=null;
-    static volatile ServerSocket server=null;
+    private String connectionStatus = null;
+    private Handler mHandler = null;
+    private Handler tHandler = null;
+    private Handler iHandler = null;
+    static volatile ServerSocket server = null;
     static volatile ServerSocket imgServer = null;
     ObjectInputStream objis;
     BufferedInputStream bis;
@@ -80,6 +87,15 @@ public class MyActivity extends AppCompatActivity {
     static volatile PrintWriter socketOut;
     boolean connected;
     boolean imgConnected;
+    private static Double x_pos;
+    private static Double y_pos;
+    private static byte[] quadTree;
+    private int arrayCounter;
+    private static Bitmap bg;
+    private static Canvas canvas;
+    private static Paint square;
+    private static boolean viewingTree;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,9 +106,9 @@ public class MyActivity extends AppCompatActivity {
         setContentView(R.layout.activity_my);
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         //setSupportActionBar(toolbar);
-        mHandler=new Handler();
-        tHandler=new Handler();
-        iHandler=new Handler();
+        mHandler = new Handler();
+        tHandler = new Handler();
+        iHandler = new Handler();
 
         tv = (TextView) findViewById(R.id.connection_text);
         btn = (Button) findViewById(R.id.sendBtn);
@@ -100,19 +116,34 @@ public class MyActivity extends AppCompatActivity {
         imgV = (ImageView) findViewById(R.id.imageView);
         vm = (Button) findViewById(R.id.button_view_messaging);
         vk = (Button) findViewById(R.id.button_view_kinect);
+        vq = (Button) findViewById(R.id.button_view_tree);
+        vs = (Button) findViewById(R.id.button_view_skeleton);
+
+        vm.setBackgroundColor(Color.GRAY);
+        vk.setBackgroundColor(Color.WHITE);
+        vq.setBackgroundColor(Color.GRAY);
+        vs.setBackgroundColor(Color.GRAY);
+
         fl = (FrameLayout) findViewById(R.id.MessagingFrame);
+
+        bg = Bitmap.createBitmap(4096, 4096, Bitmap.Config.ARGB_8888);
+        canvas = new Canvas(bg);
+        square = new Paint();
+
+
+
         //initialize server socket in a new separate thread
 
-        String msg="Attempting to connect…";
+        String msg = "Attempting to connect…";
         Toast.makeText(MyActivity.this, msg, Toast.LENGTH_SHORT).show();
 
-        new Thread( new Runnable() {
+        new Thread(new Runnable() {
             public void run() {
                 tryConnect();
             }
         }).start();
 
-        new Thread( new Runnable() {
+        new Thread(new Runnable() {
             public void run() {
                 tryImgConnect();
             }
@@ -145,43 +176,43 @@ public class MyActivity extends AppCompatActivity {
 
     public void tryConnect() {
 
-        Socket client=null;
+        Socket client = null;
         // initialize server socket
 
-        try{
+        try {
             server = new ServerSocket(38300);
             server.setSoTimeout(TIMEOUT * 1000);//attempt to accept a connection
 
             client = server.accept();
-            socketIn=new Scanner(client.getInputStream());
+            socketIn = new Scanner(client.getInputStream());
             socketOut = new PrintWriter(client.getOutputStream(), true);
         } catch (SocketTimeoutException e) {
             // print out TIMEOUT
-            connectionStatus="Connection has timed out!";
+            connectionStatus = "Connection has timed out!";
             Log.w(TAG, connectionStatus);
 
             mHandler.post(showConnectionStatus);
         } catch (IOException e) {
-            Log.e(TAG, ""+e);
+            Log.e(TAG, "" + e);
         } finally {
-        //close the server socket
+            //close the server socket
 
             try {
-                if (server!=null)
+                if (server != null)
                     server.close();
-                    Log.e(TAG, "closing server");
+                Log.e(TAG, "closing server");
             } catch (IOException ec) {
                 Log.e(TAG, "Cannot close server socket" + ec);
             }
 
         }
 
-        if (client!=null) {
-            connected=true;
+        if (client != null) {
+            connected = true;
             // print out success
             socketOut.println("Connection was succesful!");
 
-            connectionStatus="Connection was succesful!";
+            connectionStatus = "Connection was succesful!";
             Log.w(TAG, connectionStatus);
 
             //mHandler.post(showConnectionStatus);
@@ -191,7 +222,11 @@ public class MyActivity extends AppCompatActivity {
                     findViewById(R.id.loadingPanel).setVisibility(View.GONE);
                     vk.setVisibility(View.VISIBLE);
                     vm.setVisibility(View.VISIBLE);
+                    vq.setVisibility(View.VISIBLE);
+                    vs.setVisibility(View.VISIBLE);
                     imgV.setVisibility(View.VISIBLE);
+
+
 
                 }
             });
@@ -203,12 +238,12 @@ public class MyActivity extends AppCompatActivity {
 
     public void tryImgConnect() {
 
-        Socket client=null;
+        Socket client = null;
         // initialize server socket
 
         DataInputStream data = null;
 
-        try{
+        try {
             imgServer = new ServerSocket(38400);
             imgServer.setSoTimeout(TIMEOUT * 1000);//attempt to accept a connection
 
@@ -222,18 +257,18 @@ public class MyActivity extends AppCompatActivity {
 
         } catch (SocketTimeoutException e) {
             // print out TIMEOUT
-            connectionStatus="imgServer Connection has timed out! ";
+            connectionStatus = "imgServer Connection has timed out! ";
 
             Log.w(TAG, connectionStatus);
 
             mHandler.post(showConnectionStatus);
         } catch (IOException e) {
-            Log.e(TAG, ""+e);
+            Log.e(TAG, "" + e);
         } finally {
             //close the server socket
 
             try {
-                if (server!=null)
+                if (server != null)
                     server.close();
                 Log.e(TAG, "closing server");
             } catch (IOException ec) {
@@ -242,19 +277,21 @@ public class MyActivity extends AppCompatActivity {
 
         }
 
-        if (client!=null) {
-            imgConnected=true;
+        if (client != null) {
+            imgConnected = true;
 
-            connectionStatus="imgServer Connection was succesful!";
+            connectionStatus = "imgServer Connection was succesful!";
             Log.w(TAG, connectionStatus);
 
             byte[] bytes;
 
-                int count = 0;
-                while (count < 10) {
-                    try {
+            int count = 0;
+            while (count < 10) {
+                try {
 
-                        objis = new ObjectInputStream(client.getInputStream());
+                    objis = new ObjectInputStream(client.getInputStream());
+
+
 
                         /*
                         //Log.w(TAG, "Starting image loop");
@@ -285,43 +322,87 @@ public class MyActivity extends AppCompatActivity {
                                         |  (imgBytes[byteIndex + 1] & 0xFF);
                     }
                     */
-                        //Log.w(TAG, "Creating bitmap");
+                    //Log.w(TAG, "Creating bitmap");
                     // Finally, create bitmap from packed int ARGB, using ARGB_8888
                     //image = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888);
-                        //Log.w(TAG, "Bitmap created");
+                    //Log.w(TAG, "Bitmap created");
 
-                        bytes = (byte[]) objis.readObject();
+                    bytes = (byte[]) objis.readObject();
 
-                            image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
-                            tHandler.post(new Runnable() {
-                                public void run() {
-                                    if (image == null) {
-                                        //Toast.makeText(MyActivity.this, "Image is null :(", Toast.LENGTH_LONG).show();
-                                        //Log.w(TAG, "Image is null");
-                                    } else {
-                                        imgV.setImageBitmap(image);
+                    //if not a quadtree
+                    if (bytes[0] != 85) {
 
-                                        socketOut.println("#!#");
-                                    }
+
+                        image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+                        tHandler.post(new Runnable() {
+                            public void run() {
+                                if (image == null) {
+                                    //Toast.makeText(MyActivity.this, "Image is null :(", Toast.LENGTH_LONG).show();
+                                    //Log.w(TAG, "Image is null");
+                                } else {
+                                    imgV.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                                    imgV.setImageBitmap(image);
+
+                                    socketOut.println("#!#");
                                 }
-                            });
+                            }
+                        });
+
+                    } else {
+
+                        //Decode and draw quadtree
+                        quadTree = bytes;
 
 
 
-                    } catch (IOException ioe) {
-                        // TODO Auto-generated catch block
-                        //ioe.printStackTrace();
-                        //Log.w(TAG, "Image didnt work. (IOException)");
+                        drawsquare(0, 4096, 0, 4096, Color.WHITE);
+
+                        x_pos = ByteBuffer.wrap(quadTree, 1, 8).getDouble();
+                        y_pos = ByteBuffer.wrap(quadTree, 9, 8).getDouble();
+
+                        //scale for smaller pic
+                        x_pos = x_pos * 0.8192;
+                        y_pos = y_pos * 0.8192;
+
+                        Log.w(TAG, "X pos " + Double.toString(x_pos));
+                        Log.w(TAG, "Y pos " + Double.toString(y_pos));
+                        //Log.w(TAG, "index 17 bits = " + Integer.toBinaryString(quadTree[17]));
+
+                        decodeQuadtree();
+
+                        tHandler.post(new Runnable() {
+                            public void run() {
+                                //center on bot and crop around it
+                                int center_x = (int) (x_pos - 500);
+                                int center_y = (int) (y_pos - 350);
+                                Bitmap ct = Bitmap.createBitmap(bg, center_x, center_y, 1000, 700);
+                                if (viewingTree) {
+                                    imgV.setImageBitmap(ct);
+                                }
+                                socketOut.println("Quadtree recieved.");
+                            }});
+
+
+
+
+
                     }
-                    catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                        Log.w(TAG, "Image didnt work. ??");
-                    }
 
-                    //count ++;
+
+                } catch (IOException ioe) {
+                    // TODO Auto-generated catch block
+                    //ioe.printStackTrace();
+                    //Log.w(TAG, "Image didnt work. (IOException)");
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                    Log.w(TAG, "Image didnt work. ??");
                 }
+
+                //count ++;
+            }
 
 
         }
@@ -338,12 +419,12 @@ public class MyActivity extends AppCompatActivity {
         }
     };
 
-    private void listen (){
+    private void listen() {
 
 
-        while(socketIn.hasNext()) {
+        while (socketIn.hasNext()) {
 
-                    //Log.e(TAG, "Recieved:" + socketIn.nextLine());
+            //Log.e(TAG, "Recieved:" + socketIn.nextLine());
             msg = socketIn.nextLine();
             tHandler.post(new Runnable() {
                 public void run() {
@@ -356,7 +437,9 @@ public class MyActivity extends AppCompatActivity {
     }
 
 
-    /** Called when the user clicks the Send button */
+    /**
+     * Called when the user clicks the Send button
+     */
     public void sendMessage(View view) {
         // Do something in response to button
         String text = edt.getText().toString();
@@ -367,19 +450,129 @@ public class MyActivity extends AppCompatActivity {
         edt.setText("");
     }
 
+    public void decodeQuadtree() {
 
-    public void viewMessage(View view){
+        int x1 = 0;
+        int y1 = 0;
+        int x2 = 4096;
+        int y2 = 4096;
+
+        arrayCounter = 16;
+
+        //nodes start at byte[17]
+
+
+        Log.w(TAG, "Starting tree decode");
+        decodeNode(x1, y1, x2, y2);
+
+
+    }
+
+    public void decodeNode(int x1, int y1, int x2, int y2) {
+
+        arrayCounter++;
+        byte info = quadTree[arrayCounter];
+
+        int myColor = Color.WHITE;
+       if (((info >> 1 ) & 1) == 1) {
+                myColor = Color.GREEN;
+                if (((info >> 2 ) & 1) == 1){
+                    myColor = Color.RED;
+                }
+        }
+
+        //draw node
+        drawsquare(x1,x2,y1,y2,myColor);
+
+        boolean children = false;
+        //boolean children = ((info & 0x01) > 0);
+        if  (((info >> 0) & 1) == 1){
+            children = true;
+        }
+
+        if (children) {
+            int hx = (x1 + x2) / 2;
+            int hy = (y1 + y2) / 2;
+
+            decodeNode(x1, y1, hx, hy);
+            decodeNode(hx, y1, x2, hy);
+            decodeNode(x1, hy, hx, y2);
+            decodeNode(hx, hy, x2, y2);
+        }
+    }
+
+
+    public void viewMessage(View view) {
+        vm.setBackgroundColor(Color.WHITE);
+        vk.setBackgroundColor(Color.GRAY);
+        vq.setBackgroundColor(Color.GRAY);
+        vs.setBackgroundColor(Color.GRAY);
+        viewingTree = false;
         fl.setVisibility(View.VISIBLE);
         imgV.setVisibility(View.GONE);
+        socketOut.println("#&#");
     }
 
-    public void viewKinect(View view){
+    public void viewKinect(View view) {
+        vm.setBackgroundColor(Color.GRAY);
+        vk.setBackgroundColor(Color.WHITE);
+        vq.setBackgroundColor(Color.GRAY);
+        vs.setBackgroundColor(Color.GRAY);
         fl.setVisibility(View.GONE);
+        viewingTree = false;
+        imgV.setImageDrawable(null);
         imgV.setVisibility(View.VISIBLE);
-
+        socketOut.println("#$#");
 
     }
 
+    public void viewQuadtree(View view) {
+
+        vm.setBackgroundColor(Color.GRAY);
+        vk.setBackgroundColor(Color.GRAY);
+        vq.setBackgroundColor(Color.WHITE);
+        vs.setBackgroundColor(Color.GRAY);
+        fl.setVisibility(View.GONE);
+        imgV.setImageDrawable(null);
+        imgV.setVisibility(View.VISIBLE);
+        viewingTree = true;
+        socketOut.println("#@#");
+    }
+
+    public void viewSkeleton(View view) {
+        vm.setBackgroundColor(Color.GRAY);
+        vk.setBackgroundColor(Color.GRAY);
+        vq.setBackgroundColor(Color.GRAY);
+        vs.setBackgroundColor(Color.WHITE);
+        fl.setVisibility(View.GONE);
+        viewingTree = false;
+        imgV.setImageDrawable(null);
+        imgV.setVisibility(View.VISIBLE);
+        socketOut.println("#%#");
+    }
+
+    /*drawsquare(int topx, int topy, int bottomx, int bottomy, String color)
+    draw based on size. - all the android code I have seen passes the paint object
+    to the draw/fill rectangle function- not sure if that’s right but I can’t test it.
+    */
+    public void drawsquare(int left, int right, int top, int bottom, int color) {
+        //set square color
+
+        square.setColor(color);
+        square.setStyle(Paint.Style.FILL);
 
 
+        //filled with the above selected color
+        canvas.drawRect(left,top,right,bottom, square);
+
+
+        //draw a black line on the square
+        square.setStyle(Paint.Style.STROKE);
+        square.setColor(Color.BLACK);
+        canvas.drawRect(left,top,right,bottom, square);
+    }
 }
+
+
+
+

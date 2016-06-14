@@ -20,25 +20,32 @@
         android:layout_marginLeft="200dp"
         android:scrollIndicators="bottom|right" />
 
+
     <Button
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
+        android:layout_width="180dp"
+        android:layout_height="100dp"
         android:text="Messaging"
         android:onClick="viewMessage"
         android:id="@+id/button_view_messaging"
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp" />
 
     <Button
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
+        android:layout_width="180dp"
+        android:layout_height="100dp"
         android:text="Kinect"
         android:onClick="viewKinect"
         android:id="@+id/button_view_kinect"
         android:layout_above="@+id/button_view_messaging"
         android:layout_alignParentStart="true"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp" />
 
     <FrameLayout
         android:layout_width="fill_parent"
@@ -91,5 +98,33 @@
             android:layout_gravity="bottom|left"
             android:layout_marginRight="200dp" />
     </FrameLayout>
+
+    <Button
+        android:layout_width="180dp"
+        android:layout_height="100dp"
+        android:text="Quadtree"
+        android:onClick="viewQuadtree"
+        android:id="@+id/button_view_tree"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_above="@+id/button_view_skeleton"
+        android:visibility="gone"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp" />
+
+    <Button
+        android:layout_width="180dp"
+        android:layout_height="100dp"
+        android:text="Skeletons"
+        android:onClick="viewSkeleton"
+        android:id="@+id/button_view_skeleton"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_above="@+id/button_view_kinect"
+        android:visibility="gone"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="10dp" />
 
 </RelativeLayout>
