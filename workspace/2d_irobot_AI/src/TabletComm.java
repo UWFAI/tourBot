@@ -42,6 +42,7 @@ public class TabletComm {
 	Controller con;
 	
 	private static String adbLocation = "C:\\Users\\AIRG\\AppData\\Local\\Android\\sdk\\platform-tools\\adb";
+	// Used for testing on my mac 
 	//private static String adbLocation = "/Users/James/Library/Android/sdk/platform-tools/adb";
 	private static int port = 38300;
 	private static boolean connected = false;
@@ -50,7 +51,7 @@ public class TabletComm {
 	public volatile static Scanner sc;
 	
 	private static boolean imgConnected = false;
-	private static int imgPort = 38400;
+	//private static int imgPort = 38400;
 	private volatile static Socket imgSocket;
 	private volatile static OutputStream os;
 	private volatile static ObjectOutputStream oos;
@@ -68,10 +69,6 @@ public class TabletComm {
 	public static String imgType = "kinect";
 	
 	
-	
-	
-	
-	
 	/**
 	* <h2>Connection - Default Constructor</h2>
 	* The Connection class constructor
@@ -79,7 +76,6 @@ public class TabletComm {
 	*/
 	public TabletComm (Controller con){
 		this.con = con;	
-		
 		
 		
 		//Start new thread for tablet communication
@@ -96,19 +92,7 @@ public class TabletComm {
 		            			if (imgConnect() == true){
 		            				imgConnected = true;
 		            				//sendMsg("ImgServer is connected");
-		            				/*
-		            				//try sending a kermit
-		            				try{
-		            					
-		            					File img = new File("Kermit2.jpg");
-		            					BufferedImage buffImg = ImageIO.read(img);
-		            							
-		            					sendImg(buffImg);
-		            				}
-		            				catch (Exception e){
-		            					
-		            				}
-		            				*/
+		            				
 		            			}
 		            			
 		            		}
@@ -121,7 +105,7 @@ public class TabletComm {
 	   * This method starts Android Debug Bridge,
 	   * sets ports to forward to, closes any 
 	   * instances of the tablet app currently running, 
-	   * then restarts the tablet app.
+	   * then starts the tablet app.
 	   * 
 	   * @return Nothing.
 	   */
@@ -200,7 +184,7 @@ public class TabletComm {
 	
 	/**<h2>imgConnect</h2>
 	   * This method creates the socket connection and 
-	   * sets up the input and output stream.
+	   * sets up the input and output stream for sending images.
 	   * 
 	   * @return true - Connection successful
 	   * 
@@ -225,7 +209,7 @@ public class TabletComm {
 
           Runtime.getRuntime().addShutdownHook(closeSocketOnShutdown);
           
-
+          con.window.tabletTextArea.append("Img socket connected.\n");
           return true;
 
       } catch (UnknownHostException e) {
@@ -241,7 +225,7 @@ public class TabletComm {
 
 	* This method starts a scanner in a new thread to receive
 
-	* messages from the tablet app.
+	* messages from the tablet app. Need to convert if else to switch.
 
 	* 
 
@@ -279,6 +263,7 @@ public class TabletComm {
 	            
 	            }else if (scannerLine.contains("#$#")){
 	            	//kinectView Mode
+	            	logInfo("Kinect Mode");
 	            	treeView = false;
 	            	sendingImg = false;
 	            	kinectView = true;
@@ -287,7 +272,7 @@ public class TabletComm {
 	            
 	            }else if (scannerLine.contains("#&#")){
 	            	//msgView Mode
-	            	
+	            	logInfo("Messaging Mode");
 	            	sendingImg = true;
 	            	treeView = false;
 	            	kinectView = false;
@@ -295,7 +280,7 @@ public class TabletComm {
 	            
 	            }else if (scannerLine.contains("#%#")){
 	            	//skelView Mode
-	            	
+	            	logInfo("Skeleton Mode");
 	            	sendingImg = false;
 	            	treeView = false;
 	            	kinectView = true;
@@ -399,11 +384,9 @@ public class TabletComm {
 				tg2.drawImage(cropped, 0, 0, tab_image.getWidth(), tab_image.getHeight(), null);
 				tg2.dispose();
 				
+			//Images are sent much faster as compressed jpgs so we convert them	
 			File outputfile = new File("image.jpg");
 			ImageIO.write(tab_image, "jpg", outputfile);
-			
-			
-			
 			
 			/*
             ImageOutputStream out = ImageIO.createImageOutputStream(outputfile);
@@ -417,6 +400,7 @@ public class TabletComm {
             writer.dispose();
 			*/
             
+			//convert to byte array so it can be sent to tablet
 			myByteArray  = new byte [(int)outputfile.length()];
 			fis = new FileInputStream(outputfile);
 			bis = new BufferedInputStream(fis);
@@ -424,12 +408,19 @@ public class TabletComm {
 	            
 	        oos = new ObjectOutputStream(imgSocket.getOutputStream()); 	        	
 	        //logInfo("Sending image to tablet.");
+	        
+	        //Write image byte array to object output stream
 	        oos.writeObject(myByteArray);
 	        oos.flush();
 	        
 			//logInfo("Sending image to tablet.");
 				
 			/*
+				
+				//This is when I tried to send images at abgr bitmaps to the tablet
+				// The tablet would then convert them to argb bitmaps to display them because android is dumb and does not
+				// accept a normal java buffered image.
+				
 				
 				//BufferedImage convertedImg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
 			    //convertedImg.getGraphics().drawImage(img, 0, 0, null);
@@ -470,6 +461,14 @@ public class TabletComm {
 		
 	}
 	
+	
+	/**<h2>sendTree</h2>
+	   * This method sends the a byte array of an
+	   * encoded quadtree to the tablet using the image socket
+	   * and an object output stream.
+	   * 
+	   * @param tree - quadtree encoded into a byte array
+	   */
 	public void sendTree(final byte[] tree){
 		
 		
@@ -544,11 +543,17 @@ public class TabletComm {
 		
 	}
 	
+	// Future work
 	private void getLocation(){
 		sendMsg("");	
 		
 	}
 	
+	/**<h2>treeMode</h2>
+	   * This method starts a loop that sends the quadtree 
+	   * to the tablet every 2 seconds. 
+	   * 
+	   */
 	private void treeMode(){
 		
 		new Thread( new Runnable() {
@@ -558,7 +563,8 @@ public class TabletComm {
             		logInfo("Quadtree loop");
             	try{
             		con.quadtree.send_Quadtree();
-            		Thread.sleep(1000);
+            		// 2000 = 2 seconds to wait before starting loop again
+            		Thread.sleep(2000);
             		
             	}catch (Exception e){
             		

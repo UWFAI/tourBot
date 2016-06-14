@@ -164,7 +164,8 @@ public class Kinect extends J4KSDK {
 	
 	public void drawLine(Graphics2D g, int[] from, int[] to) {
 		g.setStroke(new BasicStroke(10));
-		g.drawLine(xFix(from[0]), from[1], xFix(to[0]), to[1]);
+		int fix_y = 50;
+		g.drawLine(xFix(from[0]), from[1]-fix_y, xFix(to[0]), to[1]-fix_y);
 	}
 	
 	public int xFix(int x){
@@ -289,7 +290,7 @@ public class Kinect extends J4KSDK {
 		int width_cut = 100;
 		int height_cut = 50;
 		
-		int skip = 3;
+		int skip = 4;
 		int p_size = (skip*2);
 		
 		float[][] normals_dis = new float[width*height][3];

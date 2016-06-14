@@ -108,7 +108,7 @@ public class Communication {
 	public Communication(Controller con){
 		this.con = con;
 		start_sim_com();
-		//start_iRobot_com();
+		start_iRobot_com();
 	}
 	
 	/**

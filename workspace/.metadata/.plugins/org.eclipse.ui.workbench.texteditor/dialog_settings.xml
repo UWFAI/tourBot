@@ -13,16 +13,16 @@
 		<item value="false" key="isRegEx"/>
 		<item value="false" key="incremental"/>
 		<item value="false" key="wholeword"/>
-		<item value="open" key="selection"/>
+		<item value="skip" key="selection"/>
 		<list key="findhistory">
+			<item value="skip"/>
+			<item value="println"/>
 			<item value="open"/>
 			<item value="serial"/>
 			<item value="start_iR"/>
 			<item value="set_speed"/>
 			<item value="manual"/>
 			<item value="tglbtn"/>
-			<item value="manu"/>
-			<item value="button_1"/>
 		</list>
 		<list key="replacehistory">
 			<item value="com."/>

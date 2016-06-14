@@ -22,6 +22,7 @@ import java.util.Random;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.DefaultCaret;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -171,7 +172,7 @@ public class DebugWindow extends JFrame {
 				clear = false;
 				main_kinect_image = new BufferedImage(Math.max(kinect_width*4, 1), Math.max(kinect_height*2, 1), BufferedImage.TYPE_INT_RGB);
 				g2d = (Graphics2D) main_kinect_image.getGraphics();
-				g2d.drawImage(kinect_image_2d, 0, 0, null);
+				g2d.drawImage(kinect_image_3d, 0, 0, null);
 				//g2d.dispose();
 				
 				
@@ -718,10 +719,13 @@ public class DebugWindow extends JFrame {
 		panel_Tablet.setLayout(null);
 		
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(6, 6, 480, 421);
+		scrollPane_1.setBounds(6, 6, 480, 461);
 		panel_Tablet.add(scrollPane_1);
 		
 		tabletTextArea = new JTextArea();
+		tabletTextArea.setEditable(false);
+		DefaultCaret caret = (DefaultCaret)tabletTextArea.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		scrollPane_1.setViewportView(tabletTextArea);
 		
 		msgTextField = new JTextField();
@@ -747,40 +751,6 @@ public class DebugWindow extends JFrame {
 		
 		btn_tabletSend.setBounds(369, 481, 117, 29);
 		panel_Tablet.add(btn_tabletSend);
-		
-		JButton btn_send_cookie = new JButton("Send Cookie");
-		btn_send_cookie.setBounds(44, 439, 117, 29);
-		panel_Tablet.add(btn_send_cookie);
-		
-		btn_send_cookie.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try{
-					File img = new File("Cookie.jpg");
-					BufferedImage buffImg = ImageIO.read(img);
-					con.tab.sendImg(buffImg);
-				}
-				catch (IOException ioe){
-					
-				}
-			}
-		});
-		
-		JButton btn_send_kermit = new JButton("Send Kermit");
-		btn_send_kermit.setBounds(213, 439, 117, 29);
-		panel_Tablet.add(btn_send_kermit);
-		
-		btn_send_kermit.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try{
-					File img = new File("Kermit.jpg");
-					BufferedImage buffImg = ImageIO.read(img);
-					con.tab.sendImg(buffImg);
-				}
-				catch (IOException ioe){
-					
-				}
-			}
-		});
 		
 		
 		//////////////////////////////////////////////////////////////////////////////////

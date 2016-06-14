@@ -327,25 +327,30 @@ public class Quadtree {
 		  
 		  //add quadtree nodes
 		  encode_Quadtree(root);
-		  
-		  
+		  	  
 		  Byte[] Bquadtree = byteList.toArray(new Byte[byteList.size()]);
 		  
-		  
-		      byte[] quadtree = new byte[Bquadtree.length];
+		  // Have to convert Byte array to byte array -_-
+		  byte[] quadtree = new byte[Bquadtree.length];
 
-		      for(int i = 0; i < Bquadtree.length; i++) {
-		          quadtree[i] = Bquadtree[i];
-		      }
-
-		    
+		  for(int i = 0; i < Bquadtree.length; i++) {
+		      quadtree[i] = Bquadtree[i];
+		  }
 		  
-		  System.out.println("byte array size" + Integer.toString(quadtree.length));
+		  //System.out.println("byte array size" + Integer.toString(quadtree.length));
 		  
 		  controller.tab.sendTree(quadtree);
 	  }
 	  
-	  
+	  // Encode each node as a byte is a byte array
+	  		// Future work: encode each node as 2 bits, this can save a ton of space 
+	  		// If a node has children they come after it in the array, 
+	  		//	in the order UL, UR, DL, DR
+	  		// If a node is checked we know it doesn't have children
+	  		// ex.	00 not checked, no children children
+	  		//		01 not checked, has children
+	  		//		10 checked, free	(Green)
+	  		//		11 checked, hit		(Red)
 	  private void encode_Quadtree(Node node){
 
 		  boolean children = false;
@@ -357,11 +362,10 @@ public class Quadtree {
 	    	  nodeByte = (byte) (nodeByte | (1 << 0));
 	    	  children = true;
 	      }
-	  		
-	      
+	  			      
 	      if (node.state == "free"){
 	        nodeByte = (byte) (nodeByte | (1 << 1));  
-	        // make 4th bit 1
+	        //if node is free make 4th bit 1
 	        
 	      } else if (node.state == "hit"){
 	        nodeByte = (byte) (nodeByte | (1 << 1)); 
